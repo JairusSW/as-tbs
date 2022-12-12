@@ -1,0 +1,51 @@
+{
+  "name": "as-tbs",
+  "version": "0.1.0",
+  "description": "TBS",
+  "types": "assembly/index.ts",
+  "author": "Jairus Tanaka",
+  "contributors": [],
+  "license": "MIT",
+  "scripts": {
+    "aspect": "asp",
+    "bench:astral": "astral",
+    "build:test": "asc assembly/test.ts --target test",
+    "build:transform": "tsc -p ./transform",
+    "test:wasmtime": "wasmtime ./build/test.wasm",
+    "test:lunatic": "lunatic ./build/test.wasm",
+    "test:wasm3": "wasm3 ./build/test.wasm",
+    "prettier": "as-prettier -w ."
+  },
+  "devDependencies": {
+    "@as-pect/cli": "^8.0.0",
+    "@as-tral/cli": "^2.0.0",
+    "@ason/assembly": "^0.11.1",
+    "@assemblyscript/loader": "^0.25.0",
+    "@assemblyscript/wasi-shim": "^0.1.0",
+    "as-bignum": "^0.2.23",
+    "assemblyscript": "^0.25.0",
+    "assemblyscript-prettier": "^1.0.6",
+    "json-as": "^0.5.10",
+    "prettier": "^2.8.1",
+    "typescript": "^4.9.4"
+  },
+  "dependencies": {
+    "as-string-sink": "^0.5.0",
+    "as-variant": "^0.4.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JairusSW/as-tbs.git"
+  },
+  "keywords": [
+    "assemblyscript",
+    "tbs",
+    "serialize",
+    "deserialize"
+  ],
+  "bugs": {
+    "url": "https://github.com/JairusSW/as-tbs/issues"
+  },
+  "homepage": "https://github.com/JairusSW/as-tbs#readme",
+  "type": "module"
+}
