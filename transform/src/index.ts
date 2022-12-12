@@ -75,8 +75,6 @@ class TBSTransform extends ClassDecorator {
         serializeFunc = serializeFunc.slice(0, serializeFunc.length - 2);
         serializeFunc += "];\n}";
 
-        //console.log(deserializeFunc, serializeFunc);
-
         const deserializeMethod = SimpleParser.parseClassMember(
             deserializeFunc,
             node
@@ -90,7 +88,9 @@ class TBSTransform extends ClassDecorator {
         node.members.push(serializeMethod);
 
         this.schemasList.push(this.currentClass);
-    }
+
+        console.log(toString(node));
+    }   
     get name(): string {
         return "tbs";
     }

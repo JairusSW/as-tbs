@@ -48,13 +48,12 @@ const deserialized = TBS.parse<Vec3>(serialized);
 console.log(humanify(TBS.serialize<Vec3>(deserialized)));
 
 let times = 5_000_000;
-let start = Date.now();
 let warmup = 5_000;
-while (warmup-- > 0) {
+while (warmup--) {
     TBS.serialize<Vec3>(vec);
 }
-
-while (times-- > 0) {
+let start = Date.now();
+while (times--) {
     TBS.serialize<Vec3>(vec);
 }
 
@@ -63,13 +62,12 @@ warmup = 5_000;
 
 console.log(`Serialize Vec3: ${Date.now() - start}ms`);
 
-start = Date.now();
-
-while (warmup-- > 0) {
+while (warmup--) {
     TBS.parse<Vec3>(serialized);
 }
 
-while (times-- > 0) {
+start = Date.now();
+while (times--) {
     TBS.parse<Vec3>(serialized);
 }
 

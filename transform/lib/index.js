@@ -59,12 +59,12 @@ class TBSTransform extends ClassDecorator {
         deserializeFunc += "}";
         serializeFunc = serializeFunc.slice(0, serializeFunc.length - 2);
         serializeFunc += "];\n}";
-        //console.log(deserializeFunc, serializeFunc);
         const deserializeMethod = SimpleParser.parseClassMember(deserializeFunc, node);
         node.members.push(deserializeMethod);
         const serializeMethod = SimpleParser.parseClassMember(serializeFunc, node);
         node.members.push(serializeMethod);
         this.schemasList.push(this.currentClass);
+        console.log(toString(node));
     }
     get name() {
         return "tbs";

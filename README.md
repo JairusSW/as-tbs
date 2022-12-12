@@ -12,13 +12,52 @@ Speed? Unoptimized at this point. Uses arrays which are slow.
 
 Benches for 5,000,000 ops
 
-Serialize Vec3: 638ms (~7m ops/s)
+Serialize Vec3: 621ms (~7m ops/s)
 
-Deserialize Vec3: 281ms (~19m ops/s)
+Deserialize Vec3: 280ms (~19m ops/s)
 
 How does this compare to Avro?
 
-It is one byte larger than Avro, but it allows for schema-less parsing of arbitrary data. Especially useful for decoding data from a API which does not provide schema information or reading from a database without making a horrible schema.
+It is one byte larger than Avro, but it allows for schema-less parsing of arbitrary data. Especially useful for decoding data from a API which does not provide schema information or reading from a database without making a horrible schema. Also allows parsing non-object types as the base type.
+
+Ser/de details
+
+Unlike JSON where it is necessary to iterate over a string searching for tokens `"` `{` `}` `[` `]` `,` `1,2,3,4,5,6,7,8,9,0` along with the need to escape all escape codes, TBS requires no iterating because either the data is known beforehand (compile-time) or all sequences of bytes are length-prefixed and then parsed by their respective functions.
+For example, to ser/de an object, we call:
+
+```js
+class Vec3 {
+  x!: i32;
+  y!: i32;
+  z!: i32;
+  __TBS_Deserialize(data: Array<i32>): void {
+    this.x = unchecked(data[1]);
+    this.y = unchecked(data[2]);
+    this.z = unchecked(data[3]);
+  }
+  __TBS_Serialize(): Array<i32> {
+    return [1, this.x, this.y, this.z];
+  }
+}
+```
+
+The functions are generated at COMPILE-TIME leaving us with a highly-performant method of ser/de
+
+Strings and all arrays are quite similar. Example with the word "Hello"
+```
+[StringID, length, bytes]
+[StringID, 5, 104, 101, 108, 108, 111]
+```
+
+To parse, we use something like so:
+
+```js
+function parse<T>(data: i32[]): T {
+    if (data[0] == StringID/*Even better, use isString<T>()*/) {
+        // data[1] is the length
+        return String.UTF8.decode(data.slice(2, data[1]).buffer);
+    }
+}
 
 Format spec (As of now)
 
