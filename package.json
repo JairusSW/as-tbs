@@ -31,7 +31,8 @@
   },
   "dependencies": {
     "as-string-sink": "^0.5.0",
-    "as-variant": "^0.4.0"
+    "as-variant": "^0.4.0",
+    "byte-parse-as": "^0.0.1"
   },
   "repository": {
     "type": "git",
