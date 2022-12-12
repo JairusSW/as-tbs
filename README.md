@@ -1,13 +1,12 @@
 Typed Binary Storage is a schema-oriented data ser/de format designed for maximum performance and absurd size.
 
 How compact is TBS?
+
 For Objects, TBS is 4.75x smaller than the corrosponding JSON.
 
 JSON (19 length): {"x":3,"y":2,"z":8}
 
 TBS (4 length): [1, 3, 2, 8] (Binary, not text)
-
-Format (As of now)
 
 Speed? Unoptimized at this point. Uses arrays which are slow.
 
@@ -16,6 +15,12 @@ Benches for 5,000,000 ops
 Serialize Vec3: 638ms (~7m ops/s)
 
 Deserialize Vec3: 281ms (~19m ops/s)
+
+How does this compare to Avro?
+
+It is one byte larger than Avro, but it allows for schema-less parsing of arbitrary data. Especially useful for decoding data from a API which does not provide schema information or reading from a database without making a horrible schema.
+
+Format spec (As of now)
 
 Types
 - Null = 0
