@@ -27,15 +27,8 @@ function getType(data: i8): string {
 
 const keys = ["x", "y", "z"];
 
-function toArray(buffer: ArrayBuffer): StaticArray<i32> {
-    let length = buffer.byteLength
-    let result = new StaticArray<i32>(length>>2);
-    memory.copy(
-        changetype<usize>(result),
-        changetype<usize>(buffer),
-        <usize>length,
-    );
-    return result;
+function toUint8Array(buffer: ArrayBuffer): Uint8Array {
+    return Uint8Array.wrap(buffer);
 }
 
 function humanify(buffer: ArrayBuffer): string {
@@ -51,14 +44,14 @@ function humanify(buffer: ArrayBuffer): string {
 }
 
 const serialized = TBS.serialize<Vec3>(vec);
-console.log(`Serialized Vec3: ${toArray(serialized).join(" ")}\n${humanify(serialized)}`)
+console.log(`Serialized Vec3: ${toUint8Array(serialized).join(" ")}\n${humanify(serialized)}`)
 const deserialized = TBS.parse<Vec3>(serialized);
 console.log(humanify(TBS.serialize<Vec3>(deserialized)));
 
 const i32serialized = TBS.serialize<i32>(132);
 console.log(`Type: ${load<i32>(changetype<usize>(i32serialized), 0)} Data: ${load<i32>(changetype<usize>(i32serialized), 4)}`);
 
-const i64serialized = TBS.serialize<i64>(132121343424242);
+const i64serialized = TBS.serialize<i64>(-132121343424242);
 console.log(`Type: ${load<i32>(changetype<usize>(i64serialized), 0)} Data: ${load<i64>(changetype<usize>(i64serialized), 4)}`);
 
 const f32serialized = TBS.serialize<f32>(3.14);
@@ -66,6 +59,9 @@ console.log(`Type: ${load<i32>(changetype<usize>(f32serialized), 0)} Data: ${loa
 
 const f64serialized = TBS.serialize<f64>(3.14159265358979323846);
 console.log(`Type: ${load<i32>(changetype<usize>(f64serialized), 0)} Data: ${load<f64>(changetype<usize>(f64serialized), 4)}`);
+
+console.log(toUint8Array(i64serialized).join(" "))
+
 
 let times = 5_000_000;
 let warmup = 5_000;

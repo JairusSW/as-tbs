@@ -5,11 +5,11 @@
 
 **Performance**
 
-*TBS is F-A-S-T. Here are some benchmarks:*
+*TBS is F-A-S-T. Here are some benchmarks taken with as-tral:*
 ```
-Serialize Vec3: 27,777,778 ops/s
+Serialize Vec3: 1.1B ops/s
 
-Deserialize Vec3: 23,474,178 ops/s
+Deserialize Vec3: 84M ops/s
 ```
 
 **Ser/de points**
@@ -17,6 +17,8 @@ Deserialize Vec3: 23,474,178 ops/s
 TBS ser/de from and to a flat data structure.
 
 No data manupulation is needed. Just check via the length that data exists and plug it in.
+
+Encoded as a array of u8 bytes
 
 **Size factors**
 

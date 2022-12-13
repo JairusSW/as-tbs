@@ -1,10 +1,24 @@
-const input = blackbox("The quick brown fox jumped over the lazy dog.".repeat(10));
+import { TBS } from "../src/tbs";
 
-// our string here must be a compile time constant.
-// open an issue if you'd like to see this constraint lifted.
-bench("string split", () => {
-    // this function body will be run many times.
-    // we must make sure our compiler won't throw away the computation,
-    // so we use `blackbox` here again.
-    blackbox(input.split(" "));
+@tbs
+class Vec3 {
+    x!: i32;
+    y!: i32;
+    z!: i32;
+}
+
+const vec: Vec3 = {
+    x: 3,
+    y: 2,
+    z: 8
+};
+
+const serialized = blackbox(TBS.serialize<Vec3>(vec));
+
+bench("Serialize Vec3", () => {
+    blackbox(1+1);
+});
+
+bench("Parse Vec3", () => {
+    blackbox(TBS.parse<Vec3>(serialized));
 });
