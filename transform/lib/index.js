@@ -51,7 +51,7 @@ class TBSTransform extends ClassDecorator {
         }
         this.currentClass.keys.sort((a, b) => a[1] - b[1]);
         let deserializeFunc = "__TBS_Deserialize(buffer: ArrayBuffer): void {\n";
-        let serializeFunc = "__TBS_Serialize(): ArrayBuffer {\n\tconst buffer = changetype<ArrayBuffer>(__new(\n\t\t3,\n\t\tidof<ArrayBuffer>())\n\t);";
+        let serializeFunc = "__TBS_Serialize(): ArrayBuffer {\n\tconst buffer = changetype<ArrayBuffer>(__new(\n\t\t3 << 2,\n\t\tidof<ArrayBuffer>())\n\t);";
         for (let i = 0; i < this.currentClass.keys.length; i++) {
             const key = this.currentClass.keys[i][0];
             const type = this.currentClass.keys[i][2];

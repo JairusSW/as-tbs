@@ -60,8 +60,9 @@ console.log(`Type: ${load<i32>(changetype<usize>(f32serialized), 0)} Data: ${loa
 const f64serialized = TBS.serialize<f64>(3.14159265358979323846);
 console.log(`Type: ${load<i32>(changetype<usize>(f64serialized), 0)} Data: ${load<f64>(changetype<usize>(f64serialized), 4)}`);
 
-console.log(toUint8Array(i64serialized).join(" "))
+console.log(toUint8Array(TBS.serialize("hello")).join(" "))
 
+console.log(TBS.parse<string>(TBS.serialize<string>("hello")))
 
 let times = 5_000_000;
 let warmup = 5_000;

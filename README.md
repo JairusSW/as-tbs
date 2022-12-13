@@ -7,7 +7,7 @@
 
 *TBS is F-A-S-T. Here are some benchmarks taken with as-tral:*
 ```
-Serialize Vec3: 1.1B ops/s
+Serialize Vec3: 78M ops/s
 
 Deserialize Vec3: 84M ops/s
 ```
