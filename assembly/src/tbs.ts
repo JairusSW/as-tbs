@@ -10,7 +10,7 @@ export namespace TBS {
         // @ts-ignore
         if ((isInteger<T>() || isFloat<T>()) && isFinite(data)) {
             if (isInteger<T>()) {
-                if (sizeof<T>() < 5) {
+                if (sizeof<T>() !== 8) {
                     const buffer = changetype<ArrayBuffer>(__new(2, idof<ArrayBuffer>()));
                     store<i32>(changetype<usize>(buffer), i32ID);
                     store<i32>(changetype<usize>(buffer) + <usize>4, changetype<i32>(data));
@@ -19,6 +19,18 @@ export namespace TBS {
                     const buffer = changetype<ArrayBuffer>(__new(3, idof<ArrayBuffer>()));
                     store<i32>(changetype<usize>(buffer), i32ID);
                     store<i64>(changetype<usize>(buffer) + <usize>4, changetype<i64>(data));
+                    return buffer;
+                }
+            } else {
+                if (sizeof<T>() == 4) {
+                    const buffer = changetype<ArrayBuffer>(__new(2, idof<ArrayBuffer>()));
+                    store<i32>(changetype<usize>(buffer), f32ID);
+                    store<f32>(changetype<usize>(buffer) + <usize>4, data);
+                    return buffer;
+                } else {
+                    const buffer = changetype<ArrayBuffer>(__new(3, idof<ArrayBuffer>()));
+                    store<i32>(changetype<usize>(buffer), i64ID);
+                    store<f64>(changetype<usize>(buffer) + <usize>4, data);
                     return buffer;
                 }
             }
