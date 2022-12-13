@@ -1,5 +1,11 @@
 Typed Binary Storage is a schema-oriented data ser/de format designed for maximum performance and absurd size.
 
+Speed? F-A-S-T
+
+Serialize Vec3: 27,777,778 ops/s
+
+Deserialize Vec3: 23,474,178 ops/s
+
 How compact is TBS?
 
 For Objects, TBS is 4.75x smaller than the corrosponding JSON.
@@ -7,14 +13,6 @@ For Objects, TBS is 4.75x smaller than the corrosponding JSON.
 JSON (19 length): {"x":3,"y":2,"z":8}
 
 TBS (4 length): [1, 3, 2, 8] (Binary, not text)
-
-Speed? Unoptimized at this point. Uses arrays which are slow.
-
-Benches for 5,000,000 ops
-
-Serialize Vec3: 621ms (~7m ops/s)
-
-Deserialize Vec3: 280ms (~19m ops/s)
 
 How does this compare to Avro?
 
