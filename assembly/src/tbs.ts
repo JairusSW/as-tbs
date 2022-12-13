@@ -1,18 +1,29 @@
 const NullID = 0;
 const StringID = 1;
 const ArrayID = 2;
-const NumberID = 3;
+const f32ID = 3;
+const f64ID = 4;
+const i32ID = 5;
+const i64ID = 6;
 export namespace TBS {
     export function serialize<T>(data: T): ArrayBuffer {
-        /*// @ts-ignore
+        // @ts-ignore
         if ((isInteger<T>() || isFloat<T>()) && isFinite(data)) {
+            if (isInteger<T>()) {
+                if (sizeof<T>() < 5) {
+                    const buffer = changetype<ArrayBuffer>(__new(2, idof<ArrayBuffer>()));
+                    store<i32>(changetype<usize>(buffer), i32ID);
+                    store<i32>(changetype<usize>(buffer) + <usize>4, changetype<i32>(data));
+                    return buffer;
+                } else {
+                    const buffer = changetype<ArrayBuffer>(__new(3, idof<ArrayBuffer>()));
+                    store<i32>(changetype<usize>(buffer), i32ID);
+                    store<i64>(changetype<usize>(buffer) + <usize>4, changetype<i64>(data));
+                    return buffer;
+                }
+            }
             // @ts-ignore
-            return [NumberID, data];
-        } else if (isString<T>()) {
-            // @ts-ignore
-            return [StringID, NullID];
-            // @ts-ignore
-        } else */if (isDefined(data.__TBS_Serialize)) {
+        } else if (isDefined(data.__TBS_Serialize)) {
             // @ts-ignore
             return data.__TBS_Serialize();
         }

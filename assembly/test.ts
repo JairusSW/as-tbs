@@ -55,6 +55,12 @@ console.log(`Serialized Vec3: ${toArray(serialized).join(" ")}\n${humanify(seria
 const deserialized = TBS.parse<Vec3>(serialized);
 console.log(humanify(TBS.serialize<Vec3>(deserialized)));
 
+const i32serialized = TBS.serialize<i32>(132);
+console.log(`Type: ${load<i32>(changetype<usize>(i32serialized), 0)} Data: ${load<i32>(changetype<usize>(i32serialized), 4)}`);
+
+const i64serialized = TBS.serialize<i64>(132121343424242);
+console.log(`Type: ${load<i32>(changetype<usize>(i64serialized), 0)} Data: ${load<i64>(changetype<usize>(i64serialized), 4)}`);
+
 let times = 5_000_000;
 let warmup = 5_000;
 while (warmup--) {
