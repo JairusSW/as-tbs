@@ -1,38 +1,17 @@
 const NullID = 0;
-const ObjectID = 1;
-const StringID = 2;
-const ArrayID = 3;
-const NumberID = 4;
+const StringID = 1;
+const ArrayID = 2;
+const NumberID = 3;
 import { decimalCount32 } from "assemblyscript/std/assembly/util/number";
 import { JSON } from "json-as/assembly";
 import { TBS } from "./src/tbs";
 
 // ObjectID, KeyID, ValueLength, ...Value, KeyID, ValueLength, ...Value
+@tbs
 class Vec3 {
     x!: i32;
     y!: i32;
     z!: i32;
-    __TBS_Deserialize(buffer: ArrayBuffer): void {
-        let offset = 0;
-        this.x = load<i32>(changetype<usize>(buffer));
-        offset += sizeof<i32>()
-        this.y = load<i32>(changetype<usize>(buffer) + <usize>offset);
-        offset += sizeof<i32>()
-        this.z = load<i32>(changetype<usize>(buffer) + <usize>offset);
-    }
-    __TBS_Serialize(): ArrayBuffer {
-        let offset = 0;
-        const buffer = changetype<ArrayBuffer>(__new(
-            3<<2,
-            idof<ArrayBuffer>())
-        );
-        store<i32>(changetype<usize>(buffer), this.x);
-        offset += sizeof<i32>()
-        store<i32>(changetype<usize>(buffer) + <usize>offset, this.y);
-        offset += sizeof<i32>()
-        store<i32>(changetype<usize>(buffer) + <usize>offset, this.z);
-        return buffer;
-    }
 }
 
 const vec: Vec3 = {
@@ -45,10 +24,9 @@ const vec: Vec3 = {
 function getType(data: i8): string {
     switch (data) {
         case 0: return "Null";
-        case 1: return "Object";
-        case 2: return "String";
-        case 3: return "Array";
-        case 4: return "Number";
+        case 1: return "String";
+        case 2: return "Array";
+        case 3: return "Number";
         default: return "Object"
     }
 }
@@ -57,7 +35,7 @@ const keys = ["x", "y", "z"];
 
 function toArray(buffer: ArrayBuffer): StaticArray<i32> {
     let length = buffer.byteLength
-    let result = new StaticArray<i32>(length);
+    let result = new StaticArray<i32>(length>>2);
     memory.copy(
         changetype<usize>(result),
         changetype<usize>(buffer),

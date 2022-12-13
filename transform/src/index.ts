@@ -55,25 +55,27 @@ class TBSTransform extends ClassDecorator {
 
         this.visit(node.members);
 
-        for (const key of this.currentClass.keyNames) {
-            this.currentClass.keys.push([key, djb2Hash(key)]);
+        for (let i = 0; i < this.currentClass.keyNames.length; i++) {
+            const key = this.currentClass.keyNames[i]!;
+            this.currentClass.keys.push([key, djb2Hash(key), this.currentClass.types[i]]);
         }
 
         this.currentClass.keys.sort((a, b) => a[1] - b[1]);
         
-        let deserializeFunc = "__TBS_Deserialize(data: i32[]): void {\n"
+        let deserializeFunc = "__TBS_Deserialize(buffer: ArrayBuffer): void {\n"
         
-        let serializeFunc = "__TBS_Serialize(): i32[] {\n\treturn [1, ";
+        let serializeFunc = "__TBS_Serialize(): ArrayBuffer {\n\tconst buffer = changetype<ArrayBuffer>(__new(\n\t\t3 << 2,\n\t\tidof<ArrayBuffer>())\n\t);";
 
         for (let i = 0; i < this.currentClass.keys.length; i++) {
             const key = this.currentClass.keys[i][0];
-            deserializeFunc += `\tthis.${key} = unchecked(data[${i + 1}]);\n`;
-            serializeFunc += `this.${key}, `
+            const type = this.currentClass.keys[i][2];
+            deserializeFunc += `\tthis.${key} = load<${type}>(changetype<usize>(buffer) + <usize>${typeToSize(type) * i});\n`;
+            serializeFunc += `\tstore<${type}>(changetype<usize>(buffer) + <usize>${typeToSize(type) * i}, this.${key});\n`
         }
 
         deserializeFunc += "}";
         serializeFunc = serializeFunc.slice(0, serializeFunc.length - 2);
-        serializeFunc += "];\n}";
+        serializeFunc += "return buffer;\n}"
 
         const deserializeMethod = SimpleParser.parseClassMember(
             deserializeFunc,
@@ -106,4 +108,13 @@ function djb2Hash(str: string): number {
         // h = (h * 31 + c) | 0;
         h = ((h << 5) - h + points[p]!.codePointAt(0)!) | 0;
     return h;
+}
+
+function typeToSize(data: string): number {
+    switch (data) {
+        case "i32": {
+            return 4;
+        }
+    }
+    return 0;
 }

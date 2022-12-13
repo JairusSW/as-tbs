@@ -9,7 +9,7 @@
   "scripts": {
     "aspect": "asp",
     "bench:astral": "astral",
-    "build:test": "asc assembly/test.ts --target test",
+    "build:test": "asc assembly/test.ts --target test --runtime stub",
     "build:transform": "tsc -p ./transform",
     "test:wasmtime": "wasmtime ./build/test.wasm",
     "test:lunatic": "lunatic ./build/test.wasm",

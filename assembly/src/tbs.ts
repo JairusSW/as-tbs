@@ -1,8 +1,7 @@
 const NullID = 0;
-const ObjectID = 1;
-const StringID = 2;
-const ArrayID = 3;
-const NumberID = 4;
+const StringID = 1;
+const ArrayID = 2;
+const NumberID = 3;
 export namespace TBS {
     export function serialize<T>(data: T): ArrayBuffer {
         /*// @ts-ignore
