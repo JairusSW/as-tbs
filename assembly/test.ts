@@ -1,9 +1,3 @@
-const NullID = 0;
-const StringID = 1;
-const ArrayID = 2;
-const NumberID = 3;
-import { decimalCount32 } from "assemblyscript/std/assembly/util/number";
-import { JSON } from "json-as/assembly";
 import { TBS } from "./src/tbs";
 
 // ObjectID, KeyID, ValueLength, ...Value, KeyID, ValueLength, ...Value
