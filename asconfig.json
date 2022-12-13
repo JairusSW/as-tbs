@@ -11,7 +11,7 @@
   },
   "options": {
     "converge": true,
-    "transform": ["json-as/transform", "@ason/transform", "./transform"],
+    "transform": ["json-as/transform", "./transform"],
     "bindings": "esm",
     "exportStart": "_start"
   },

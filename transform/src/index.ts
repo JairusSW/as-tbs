@@ -79,6 +79,7 @@ class TBSTransform extends ClassDecorator {
             deserializeFunc,
             node
         );
+        
         node.members.push(deserializeMethod);
 
         const serializeMethod = SimpleParser.parseClassMember(
