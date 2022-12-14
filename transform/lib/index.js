@@ -50,8 +50,13 @@ class TBSTransform extends ClassDecorator {
             this.currentClass.keys.push([key, djb2Hash(key), this.currentClass.types[i]]);
         }
         this.currentClass.keys.sort((a, b) => a[1] - b[1]);
+        let byteLength = 0;
+        for (let i = 0; i < this.currentClass.types.length; i++) {
+            const type = this.currentClass.types[i];
+            byteLength += typeToSize(type);
+        }
         let deserializeFunc = "__TBS_Deserialize(buffer: ArrayBuffer): void {\n";
-        let serializeFunc = "__TBS_Serialize(): ArrayBuffer {\n\tconst buffer = changetype<ArrayBuffer>(__new(\n\t\t3 << 2,\n\t\tidof<ArrayBuffer>())\n\t);";
+        let serializeFunc = `__TBS_Serialize(): ArrayBuffer {\n\tconst buffer = changetype<ArrayBuffer>(__new(\n\t\t${byteLength},\n\t\tidof<ArrayBuffer>())\n\t);`;
         for (let i = 0; i < this.currentClass.keys.length; i++) {
             const key = this.currentClass.keys[i][0];
             const type = this.currentClass.keys[i][2];
@@ -83,8 +88,29 @@ function djb2Hash(str) {
 }
 function typeToSize(data) {
     switch (data) {
+        case "i8": {
+            return 1;
+        }
+        case "i16": {
+            return 2;
+        }
         case "i32": {
             return 4;
+        }
+        case "i64": {
+            return 8;
+        }
+        case "u8": {
+            return 1;
+        }
+        case "u16": {
+            return 2;
+        }
+        case "u32": {
+            return 4;
+        }
+        case "u64": {
+            return 8;
         }
     }
     return 0;

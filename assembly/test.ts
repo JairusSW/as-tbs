@@ -3,9 +3,9 @@ import { TBS } from "./src/tbs";
 // ObjectID, KeyID, ValueLength, ...Value, KeyID, ValueLength, ...Value
 @tbs
 class Vec3 {
-    x!: i32;
-    y!: i32;
-    z!: i32;
+    x!: i8;
+    y!: i8;
+    z!: i8;
 }
 
 const vec: Vec3 = {
@@ -33,13 +33,12 @@ function toUint8Array(buffer: ArrayBuffer): Uint8Array {
 
 function humanify(buffer: ArrayBuffer): string {
     let result = "Type: "
-    let offset = 0;
     //const type = load<u8>(changetype<usize>(buffer));
     let i = 1;
     //if (type > 4) i = 0;
-    result += "Object" + "\n" + `Key: ${unchecked(keys[0])} Value: ${load<i32>(changetype<usize>(buffer), 0)}\n`;
-    result += `Key: ${unchecked(keys[++i])} Value: ${unchecked(load<i32>(changetype<usize>(buffer), 4))}\n`;
-    result += `Key: ${unchecked(keys[++i])} Value: ${unchecked(load<i32>(changetype<usize>(buffer), 8))}\n`;
+    result += "Object" + "\n" + `Key: ${unchecked(keys[0])} Value: ${load<i8>(changetype<usize>(buffer), 0)}\n`;
+    result += `Key: ${unchecked(keys[++i])} Value: ${unchecked(load<i8>(changetype<usize>(buffer), 1))}\n`;
+    result += `Key: ${unchecked(keys[++i])} Value: ${unchecked(load<i8>(changetype<usize>(buffer), 2))}\n`;
     return result;
 }
 
@@ -60,6 +59,7 @@ console.log(`Type: ${load<i32>(changetype<usize>(f32serialized), 0)} Data: ${loa
 const f64serialized = TBS.serialize<f64>(3.14159265358979323846);
 console.log(`Type: ${load<i32>(changetype<usize>(f64serialized), 0)} Data: ${load<f64>(changetype<usize>(f64serialized), 4)}`);
 
+console.log(toUint8Array(i64serialized).join(" "))
 console.log(toUint8Array(TBS.serialize("hello")).join(" "))
 
 console.log(TBS.parse<string>(TBS.serialize<string>("hello")))

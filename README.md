@@ -28,6 +28,7 @@ JSON (19 length): {"x":3,"y":2,"z":8}
 
 TBS (3 length): [3, 2, 8] (Binary, not text)
 ```
+
 For Strings, it is the same length as JSON
 
 For Arrays, it is 1 byte smaller than JSON (Unless it is a object)
