@@ -1,6 +1,15 @@
 import { ClassDecorator, registerDecorator, } from "visitor-as/dist/decorator.js";
 import { getName, toString } from "visitor-as/dist/utils.js";
 import { SimpleParser } from "visitor-as/dist/index.js";
+const NullID = 0;
+const TrueID = 1;
+const FalseID = 2;
+const StringID = 3;
+const ArrayID = 4;
+const f32ID = 5;
+const f64ID = 6;
+const i32ID = 7;
+const i64ID = 8;
 class SchemaData {
     constructor() {
         this.keys = [];
@@ -55,20 +64,34 @@ class TBSTransform extends ClassDecorator {
             const type = this.currentClass.types[i];
             byteLength += typeToSize(type);
         }
-        let deserializeFunc = "__TBS_Deserialize(buffer: ArrayBuffer): void {\n";
-        let serializeFunc = `__TBS_Serialize(): ArrayBuffer {\n\tconst buffer = changetype<ArrayBuffer>(__new(\n\t\t${byteLength},\n\t\tidof<ArrayBuffer>())\n\t);`;
+        let deserializeFunc = [];
+        let serializeFunc = [];
+        const addLengths = [];
+        let offset = -typeToSize(this.currentClass.keys[0][2]);
         for (let i = 0; i < this.currentClass.keys.length; i++) {
             const key = this.currentClass.keys[i][0];
             const type = this.currentClass.keys[i][2];
-            deserializeFunc += `\tthis.${key} = load<${type}>(changetype<usize>(buffer) + <usize>${typeToSize(type) * i});\n`;
-            serializeFunc += `\tstore<${type}>(changetype<usize>(buffer) + <usize>${typeToSize(type) * i}, this.${key});\n`;
+            if (type == "string") {
+                addLengths.push(` + this.${key}.length`);
+            }
+            offset += typeToSize(type);
+            switch (type) {
+                case "i8" || "i16" || "i32" || "i64" || "u8" || "u16" || "u32" || "u64" || "f32" || "f64": {
+                    serializeFunc.push(`\tstore<${type}>(changetype<usize>(buffer) + <usize>${offset}, this.${key});`);
+                    deserializeFunc.push(`\tthis.${key} = load<${type}>(changetype<usize>(buffer) + <usize>${offset});`);
+                    break;
+                }
+                case "string": {
+                    serializeFunc.push(`\tstore<u32>(changetype<usize>(buffer) + <usize>${offset - 3}, this.${key}.length);
+        memory.copy(changetype<usize>(buffer) + <usize>${++offset}, changetype<usize>(String.UTF8.encode(this.${key})), <usize>this.${key}.length);`);
+                    deserializeFunc.push(`\tthis.${key} = String.UTF8.decodeUnsafe(changetype<usize>(buffer) + <usize>${offset}, load<u8>(changetype<usize>(buffer) + <usize>${offset - 4}))`);
+                    break;
+                }
+            }
         }
-        deserializeFunc += "}";
-        serializeFunc = serializeFunc.slice(0, serializeFunc.length - 2);
-        serializeFunc += "return buffer;\n}";
-        const deserializeMethod = SimpleParser.parseClassMember(deserializeFunc, node);
+        const deserializeMethod = SimpleParser.parseClassMember("__TBS_Deserialize(buffer: ArrayBuffer): void {\n" + deserializeFunc.join("\n") + "\n}", node);
         node.members.push(deserializeMethod);
-        const serializeMethod = SimpleParser.parseClassMember(serializeFunc, node);
+        const serializeMethod = SimpleParser.parseClassMember(`__TBS_Serialize(): ArrayBuffer {\n\tconst buffer = changetype<ArrayBuffer>(__new(${byteLength}${addLengths.join("")},idof<ArrayBuffer>()));\n` + serializeFunc.join("\n") + "return buffer;\n}", node);
         node.members.push(serializeMethod);
         this.schemasList.push(this.currentClass);
         console.log(toString(node));
@@ -111,6 +134,9 @@ function typeToSize(data) {
         }
         case "u64": {
             return 8;
+        }
+        case "string": {
+            return 4;
         }
     }
     return 0;
