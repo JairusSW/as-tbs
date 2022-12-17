@@ -87,6 +87,10 @@ class TBSTransform extends ClassDecorator {
                     deserializeFunc.push(`\tthis.${key} = String.UTF8.decodeUnsafe(changetype<usize>(buffer) + <usize>${offset}, load<u8>(changetype<usize>(buffer) + <usize>${offset - 4}))`);
                     break;
                 }
+                case "boolean" || "bool": {
+                    serializeFunc.push(`\tstore<u8>(changetype<usize>(buffer) + <usize>${offset}, this.${key} ? 1 : 2);\n`);
+                    deserializeFunc.push(`\tthis.${key} = load<u8>(changetype<usize>(buffer) + <usize>${offset}) == 1 ? true : false;\n`);
+                }
             }
         }
         const deserializeMethod = SimpleParser.parseClassMember("__TBS_Deserialize(buffer: ArrayBuffer): void {\n" + deserializeFunc.join("\n") + "\n}", node);
@@ -100,7 +104,6 @@ class TBSTransform extends ClassDecorator {
         return "tbs";
     }
 }
-export default registerDecorator(new TBSTransform());
 function djb2Hash(str) {
     const points = Array.from(str);
     let h = 5381;
@@ -138,6 +141,10 @@ function typeToSize(data) {
         case "string": {
             return 4;
         }
+        case "boolean" || "bool": {
+            return 1;
+        }
     }
     return 0;
 }
+export default registerDecorator(new TBSTransform());

@@ -3,15 +3,14 @@
     "test": {
       "outFile": "build/test.wasm",
       "sourceMap": false,
-      "optimizeLevel": 3,
+      "optimizeLevel": 0,
       "shrinkLevel": 0,
       "converge": false,
       "noAssert": false
     }
   },
   "options": {
-    "converge": true,
-    "transform": ["json-as/transform", "./transform"],
+    "transform": ["./transform"],
     "bindings": "esm",
     "exportStart": "_start"
   },

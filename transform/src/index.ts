@@ -76,7 +76,7 @@ class TBSTransform extends ClassDecorator {
 
         for (let i = 0; i < this.currentClass.types.length; i++) {
             const type = this.currentClass.types[i];
-            byteLength += typeToSize(type);
+            byteLength += typeToSize(type!);
         }
 
         let deserializeFunc: string[] = [];
@@ -108,6 +108,10 @@ class TBSTransform extends ClassDecorator {
                     deserializeFunc.push(`\tthis.${key} = String.UTF8.decodeUnsafe(changetype<usize>(buffer) + <usize>${offset}, load<u8>(changetype<usize>(buffer) + <usize>${offset - 4}))`);
                     break;
                 }
+                case "boolean" || "bool": {
+                    serializeFunc.push(`\tstore<u8>(changetype<usize>(buffer) + <usize>${offset}, this.${key} ? 1 : 2);\n`);
+                    deserializeFunc.push(`\tthis.${key} = load<u8>(changetype<usize>(buffer) + <usize>${offset}) == 1 ? true : false;\n`)
+                }
             }
         }
 
@@ -133,7 +137,6 @@ class TBSTransform extends ClassDecorator {
     }
 }
 
-export default registerDecorator(new TBSTransform());
 
 function djb2Hash(str: string): number {
     const points = Array.from(str);
@@ -173,6 +176,11 @@ function typeToSize(data: string): number {
         case "string": {
             return 4;
         }
+        case "boolean" || "bool": {
+            return 1;
+        }
     }
     return 0;
 }
+
+export default registerDecorator(new TBSTransform());

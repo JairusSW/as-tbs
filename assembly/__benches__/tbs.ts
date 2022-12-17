@@ -3,9 +3,9 @@ import { TBS } from "../src/tbs";
 // @ts-ignore
 @tbs
 class Vec3 {
-    x!: i32;
-    y!: i32;
-    z!: i32;
+    x!: i8;
+    y!: i8;
+    z!: i8;
 }
 
 const vec: Vec3 = {
