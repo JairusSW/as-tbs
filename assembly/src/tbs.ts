@@ -65,23 +65,9 @@ export namespace TBS {
         }
         return unreachable();
     }
-    export function parse<T>(data: ArrayBuffer): T {
-        if (isString<T>()) {
-            // @ts-ignore
-            return String.UTF8.decodeUnsafe(changetype<usize>(data) + <usize>2, load<u8>(changetype<usize>(data) + <usize>1));
-        } else if (isManaged<T>() || isReference<T>()) {
-            // @ts-ignore
-            const type: nonnull<T> = changetype<nonnull<T>>(__new(offsetof<nonnull<T>>(), idof<nonnull<T>>()));
-            // @ts-ignore
-            if (isDefined(type.__TBS_Deserialize)) {
-                // @ts-ignore
-                type.__TBS_Deserialize(data);
-                return type;
-            }
-            return unreachable();
-        } else if (isInteger<T>() || isFloat<T>()) {
-            return load<T>(changetype<usize>(data) + <usize>1);
-        }
+    export function parseTo<T>(data: ArrayBuffer, t: T): T {
+        t.__TBS_Deserialize(data);
+        return t;
         return unreachable();
     }
 }

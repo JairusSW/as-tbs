@@ -13,12 +13,13 @@ import { SimpleParser } from "visitor-as/dist/index.js";
 const NullID: u8 = 0;
 const TrueID: u8 = 1;
 const FalseID: u8 = 2;
-const StringID: u8 = 3;
-const ArrayID: u8 = 4;
-const f32ID: u8 = 5;
-const f64ID: u8 = 6;
-const i32ID: u8 = 7;
-const i64ID: u8 = 8;
+const String8ID: u8 = 3;
+const String16ID: u8 = 4;
+const ArrayID: u8 = 5;
+const f32ID: u8 = 6;
+const f64ID: u8 = 7;
+const i32ID: u8 = 8;
+const i64ID: u8 = 9;
 
 class SchemaData {
     public keys: any[] = [];
@@ -91,6 +92,8 @@ class TBSTransform extends ClassDecorator {
             const type = this.currentClass.keys[i][2];
 
             if (type == "string") {
+                addLengths.push(` + (this.${key}.length << 1)`);
+            } if (type == "string8") {
                 addLengths.push(` + this.${key}.length`);
             }
 
@@ -102,10 +105,16 @@ class TBSTransform extends ClassDecorator {
                     deserializeFunc.push(`\tthis.${key} = load<${type}>(changetype<usize>(buffer) + <usize>${offset});`);
                     break;
                 }
-                case "string": {
+                case "string8": {
                     serializeFunc.push(`\tstore<u32>(changetype<usize>(buffer) + <usize>${offset - 3}, this.${key}.length);
         memory.copy(changetype<usize>(buffer) + <usize>${++offset}, changetype<usize>(String.UTF8.encode(this.${key})), <usize>this.${key}.length);`);
                     deserializeFunc.push(`\tthis.${key} = String.UTF8.decodeUnsafe(changetype<usize>(buffer) + <usize>${offset}, load<u8>(changetype<usize>(buffer) + <usize>${offset - 4}))`);
+                    break;
+                }
+                case "string": {
+                    serializeFunc.push(`\tstore<u32>(changetype<usize>(buffer) + <usize>${offset - 3}, this.${key}.length << 1);
+        memory.copy(changetype<usize>(buffer) + <usize>${++offset}, changetype<usize>(String.UTF16.encode(this.${key})), <usize>this.${key}.length << 1);`);
+                    deserializeFunc.push(`\tthis.${key} = String.UTF16.decodeUnsafe(changetype<usize>(buffer) + <usize>${offset}, load<u8>(changetype<usize>(buffer) + <usize>${offset - 4}))`);
                     break;
                 }
                 case "boolean" || "bool": {
@@ -172,6 +181,9 @@ function typeToSize(data: string): number {
         }
         case "u64": {
             return 8;
+        }
+        case "string8": {
+            return 4;
         }
         case "string": {
             return 4;

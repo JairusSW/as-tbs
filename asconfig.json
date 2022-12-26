@@ -3,7 +3,7 @@
     "test": {
       "outFile": "build/test.wasm",
       "sourceMap": false,
-      "optimizeLevel": 0,
+      "optimizeLevel": 3,
       "shrinkLevel": 0,
       "converge": false,
       "noAssert": false
@@ -11,8 +11,6 @@
   },
   "options": {
     "transform": ["./transform"],
-    "bindings": "esm",
-    "exportStart": "_start"
-  },
-  "extends": "./node_modules/@assemblyscript/wasi-shim/asconfig.json"
+    "bindings": "esm"
+  }
 }

@@ -4,12 +4,13 @@ import { SimpleParser } from "visitor-as/dist/index.js";
 const NullID = 0;
 const TrueID = 1;
 const FalseID = 2;
-const StringID = 3;
-const ArrayID = 4;
-const f32ID = 5;
-const f64ID = 6;
-const i32ID = 7;
-const i64ID = 8;
+const String8ID = 3;
+const String16ID = 4;
+const ArrayID = 5;
+const f32ID = 6;
+const f64ID = 7;
+const i32ID = 8;
+const i64ID = 9;
 class SchemaData {
     constructor() {
         this.keys = [];
@@ -72,6 +73,9 @@ class TBSTransform extends ClassDecorator {
             const key = this.currentClass.keys[i][0];
             const type = this.currentClass.keys[i][2];
             if (type == "string") {
+                addLengths.push(` + (this.${key}.length << 1)`);
+            }
+            if (type == "string8") {
                 addLengths.push(` + this.${key}.length`);
             }
             offset += typeToSize(type);
@@ -81,10 +85,16 @@ class TBSTransform extends ClassDecorator {
                     deserializeFunc.push(`\tthis.${key} = load<${type}>(changetype<usize>(buffer) + <usize>${offset});`);
                     break;
                 }
-                case "string": {
+                case "string8": {
                     serializeFunc.push(`\tstore<u32>(changetype<usize>(buffer) + <usize>${offset - 3}, this.${key}.length);
         memory.copy(changetype<usize>(buffer) + <usize>${++offset}, changetype<usize>(String.UTF8.encode(this.${key})), <usize>this.${key}.length);`);
                     deserializeFunc.push(`\tthis.${key} = String.UTF8.decodeUnsafe(changetype<usize>(buffer) + <usize>${offset}, load<u8>(changetype<usize>(buffer) + <usize>${offset - 4}))`);
+                    break;
+                }
+                case "string": {
+                    serializeFunc.push(`\tstore<u32>(changetype<usize>(buffer) + <usize>${offset - 3}, this.${key}.length << 1);
+        memory.copy(changetype<usize>(buffer) + <usize>${++offset}, changetype<usize>(String.UTF16.encode(this.${key})), <usize>this.${key}.length << 1);`);
+                    deserializeFunc.push(`\tthis.${key} = String.UTF16.decodeUnsafe(changetype<usize>(buffer) + <usize>${offset}, load<u8>(changetype<usize>(buffer) + <usize>${offset - 4}))`);
                     break;
                 }
                 case "boolean" || "bool": {
@@ -137,6 +147,9 @@ function typeToSize(data) {
         }
         case "u64": {
             return 8;
+        }
+        case "string8": {
+            return 4;
         }
         case "string": {
             return 4;
