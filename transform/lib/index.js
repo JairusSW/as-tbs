@@ -81,31 +81,34 @@ class TBSTransform extends ClassDecorator {
             offset += typeToSize(type);
             switch (type) {
                 case "i8" || "i16" || "i32" || "i64" || "u8" || "u16" || "u32" || "u64" || "f32" || "f64": {
-                    serializeFunc.push(`\tstore<${type}>(changetype<usize>(buffer) + <usize>${offset}, this.${key});`);
-                    deserializeFunc.push(`\tthis.${key} = load<${type}>(changetype<usize>(buffer) + <usize>${offset});`);
+                    serializeFunc.push(`\tstore<${type}>(changetype<usize>(out) + <usize>${offset}, in.${key});`);
+                    deserializeFunc.push(`\tout.${key} = load<${type}>(changetype<usize>(input) + <usize>${offset});`);
                     break;
                 }
                 case "string8": {
-                    serializeFunc.push(`\tstore<u32>(changetype<usize>(buffer) + <usize>${offset - 3}, this.${key}.length);
-        memory.copy(changetype<usize>(buffer) + <usize>${++offset}, changetype<usize>(String.UTF8.encode(this.${key})), <usize>this.${key}.length);`);
-                    deserializeFunc.push(`\tthis.${key} = String.UTF8.decodeUnsafe(changetype<usize>(buffer) + <usize>${offset}, load<u8>(changetype<usize>(buffer) + <usize>${offset - 4}))`);
+                    serializeFunc.push(`\tstore<u32>(changetype<usize>(out) + <usize>${offset - 3}, in.${key}.length);
+        memory.copy(changetype<usize>(out) + <usize>${++offset}, changetype<usize>(String.UTF8.encode(in.${key})), <usize>in.${key}.length);`);
+                    deserializeFunc.push(`\tout.${key} = String.UTF8.decodeUnsafe(changetype<usize>(input) + <usize>${offset}, load<u8>(changetype<usize>(input) + <usize>${offset - 4}))`);
                     break;
                 }
                 case "string": {
-                    serializeFunc.push(`\tstore<u32>(changetype<usize>(buffer) + <usize>${offset - 3}, this.${key}.length << 1);
-        memory.copy(changetype<usize>(buffer) + <usize>${++offset}, changetype<usize>(String.UTF16.encode(this.${key})), <usize>this.${key}.length << 1);`);
-                    deserializeFunc.push(`\tthis.${key} = String.UTF16.decodeUnsafe(changetype<usize>(buffer) + <usize>${offset}, load<u8>(changetype<usize>(buffer) + <usize>${offset - 4}))`);
+                    serializeFunc.push(`\tstore<u32>(changetype<usize>(out) + <usize>${offset - 3}, in.${key}.length << 1);
+        memory.copy(changetype<usize>(out) + <usize>${++offset}, changetype<usize>(String.UTF16.encode(in.${key})), <usize>in.${key}.length << 1);`);
+                    deserializeFunc.push(`\tout.${key} = String.UTF16.decodeUnsafe(changetype<usize>(input) + <usize>${offset}, load<u8>(changetype<usize>(input) + <usize>${offset - 4}))`);
                     break;
                 }
                 case "boolean" || "bool": {
-                    serializeFunc.push(`\tstore<u8>(changetype<usize>(buffer) + <usize>${offset}, this.${key} ? 1 : 2);\n`);
-                    deserializeFunc.push(`\tthis.${key} = load<u8>(changetype<usize>(buffer) + <usize>${offset}) == 1 ? true : false;\n`);
+                    serializeFunc.push(`\tstore<u8>(changetype<usize>(out) + <usize>${offset}, in.${key} ? 1 : 2);\n`);
+                    deserializeFunc.push(`\tout.${key} = load<u8>(changetype<usize>(input) + <usize>${offset}) == 1 ? true : false;\n`);
                 }
             }
         }
-        const deserializeMethod = SimpleParser.parseClassMember("__TBS_Deserialize(buffer: ArrayBuffer): void {\n" + deserializeFunc.join("\n") + "\n}", node);
+        const byteLengthProperty = SimpleParser.parseClassMember(`public __TBS_ByteLength: u8 = 3;`, node);
+        node.members.push(byteLengthProperty);
+        //console.log(`__TBS_Deserialize(input: ArrayBuffer, out: ${this.currentClass.name}): void {\n${deserializeFunc.join("\n")}\n}`, `__TBS_Serialize(input: ${this.currentClass.name}, out: ArrayBuffer): void {\n${serializeFunc.join("\n")}return buffer;\n}`)
+        const deserializeMethod = SimpleParser.parseClassMember(`static __TBS_Deserialize(input: ArrayBuffer, out: ${this.currentClass.name}): void {\n${deserializeFunc.join("\n")}\n}`, node);
         node.members.push(deserializeMethod);
-        const serializeMethod = SimpleParser.parseClassMember(`__TBS_Serialize(): ArrayBuffer {\n\tconst buffer = changetype<ArrayBuffer>(__new(${byteLength}${addLengths.join("")},idof<ArrayBuffer>()));\n` + serializeFunc.join("\n") + "return buffer;\n}", node);
+        const serializeMethod = SimpleParser.parseClassMember(`static __TBS_Serialize(input: ${this.currentClass.name}, out: ArrayBuffer): void {\n${serializeFunc.join("\n")}return buffer;\n}`, node);
         node.members.push(serializeMethod);
         this.schemasList.push(this.currentClass);
         console.log(toString(node));

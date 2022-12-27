@@ -9,65 +9,48 @@ const i32ID: u8 = 7;
 const i64ID: u8 = 8;
 
 export namespace TBS {
+    // @ts-ignore
+    @inline
     export function serialize<T>(data: T): ArrayBuffer {
-        if (isString<T>()) {
-            // @ts-ignore
-            const buffer = changetype<ArrayBuffer>(__new(data.length + 1, idof<ArrayBuffer>()));
-            // @ts-ignore
-            const src = String.UTF8.encode(data);
-            store<u8>(changetype<usize>(buffer), StringID);
-            // @ts-ignore
-            store<i32>(changetype<usize>(buffer) + <usize>1, data.length)
-            memory.copy(
-                changetype<usize>(buffer) + <usize>2,
-                changetype<usize>(src),
-                <usize>(src.byteLength as u32),
-            );
-            return buffer;
-        }
         // @ts-ignore
-        else if ((isInteger<T>() || isFloat<T>()) && isFinite(data)) {
-            if (isInteger<T>()) {
-                if (sizeof<T>() !== 8) {
-                    // @ts-ignore
-                    const buffer = changetype<ArrayBuffer>(__new(2, idof<ArrayBuffer>()));
-                    store<u8>(changetype<usize>(buffer), i32ID);
-                    store<i32>(changetype<usize>(buffer) + <usize>4, changetype<i32>(data));
-                    return buffer;
-                } else {
-                    // @ts-ignore
-                    const buffer = changetype<ArrayBuffer>(__new(3, idof<ArrayBuffer>()));
-                    store<u8>(changetype<usize>(buffer), i32ID);
-                    store<i64>(changetype<usize>(buffer) + <usize>4, changetype<i64>(data));
-                    return buffer;
-                }
-            } else {
-                if (sizeof<T>() == 4) {
-                    // @ts-ignore
-                    const buffer = changetype<ArrayBuffer>(__new(2, idof<ArrayBuffer>()));
-                    store<u8>(changetype<usize>(buffer), f32ID);
-                    // @ts-ignore
-                    store<f32>(changetype<usize>(buffer) + <usize>4, data);
-                    return buffer;
-                } else {
-                    // @ts-ignore
-                    const buffer = changetype<ArrayBuffer>(__new(3, idof<ArrayBuffer>()));
-                    store<u8>(changetype<usize>(buffer), i64ID);
-                    // @ts-ignore
-                    store<f64>(changetype<usize>(buffer) + <usize>4, data);
-                    return buffer;
-                }
-            }
-            // @ts-ignore
-        } else if (isDefined(data.__TBS_Serialize)) {
+        if (isDefined(data.__TBS_Serialize)) {
             // @ts-ignore
             return data.__TBS_Serialize();
         }
         return unreachable();
     }
+    // @ts-ignore
+    @inline
+    export function serializeField<T>(data: T, index: u8): ArrayBuffer {
+        // @ts-ignore
+        return data.__TBS_Serialize_Field<i8>(index);
+    }
+    // @ts-ignore
+    @inline
+    export function parse<T>(data: ArrayBuffer): T {
+        if (isManaged<T>() || isReference<T>()) {
+            // @ts-ignore
+            const type: nonnull<T> = changetype<nonnull<T>>(__new(offsetof<nonnull<T>>(), idof<nonnull<T>>()));
+            // @ts-ignore
+            if (isDefined(type.__TBS_Deserialize)) {
+                // @ts-ignore
+                type.__TBS_Deserialize(data);
+                return type;
+            }
+            return unreachable();
+        }
+        return unreachable();
+    }
+    // @ts-ignore
+    @inline
     export function parseTo<T>(data: ArrayBuffer, t: T): T {
         t.__TBS_Deserialize(data);
         return t;
-        return unreachable();
+    }
+    // @ts-ignore
+    @inline
+        export function parseField<T>(to: T, index: u8): T {
+        // @ts-ignore
+        return to.__TBS_Deserialize_Field<T>(index, to);
     }
 }
