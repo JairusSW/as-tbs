@@ -11,46 +11,34 @@ const i64ID: u8 = 8;
 export namespace TBS {
     // @ts-ignore
     @inline
-    export function serialize<T>(data: T): ArrayBuffer {
+        export function serialize<T>(data: T): ArrayBuffer {
         // @ts-ignore
-        if (isDefined(data.__TBS_Serialize)) {
+        //if (isDefined(T.__TBS_Serialize)) {
             // @ts-ignore
-            return data.__TBS_Serialize();
-        }
-        return unreachable();
-    }
-    // @ts-ignore
-    @inline
-    export function serializeField<T>(data: T, index: u8): ArrayBuffer {
-        // @ts-ignore
-        return data.__TBS_Serialize_Field<i8>(index);
+        let input = T;
+            const out = new ArrayBuffer(input.__TBS_ByteLength);
+            
+            input.__TBS_Serialize(data, out);
+            return out;
+        //}
+        //return unreachable();
     }
     // @ts-ignore
     @inline
     export function parse<T>(data: ArrayBuffer): T {
-        if (isManaged<T>() || isReference<T>()) {
+        //if (isManaged<T>() || isReference<T>()) {
             // @ts-ignore
-            const type: nonnull<T> = changetype<nonnull<T>>(__new(offsetof<nonnull<T>>(), idof<nonnull<T>>()));
+        const out: nonnull<T> = changetype<nonnull<T>>(__new(offsetof<nonnull<T>>(), idof<nonnull<T>>()));
+        type input = T;
             // @ts-ignore
-            if (isDefined(type.__TBS_Deserialize)) {
+           // if (isDefined(out.__TBS_Deserialize)) {
                 // @ts-ignore
-                type.__TBS_Deserialize(data);
-                return type;
-            }
-            return unreachable();
-        }
-        return unreachable();
-    }
-    // @ts-ignore
-    @inline
-    export function parseTo<T>(data: ArrayBuffer, t: T): T {
-        t.__TBS_Deserialize(data);
-        return t;
-    }
-    // @ts-ignore
-    @inline
-        export function parseField<T>(to: T, index: u8): T {
-        // @ts-ignore
-        return to.__TBS_Deserialize_Field<T>(index, to);
+        
+                T.__TBS_Deserialize(data, out);
+                return out;
+            //}
+            //return unreachable();
+       // }
+        //return unreachable();
     }
 }
