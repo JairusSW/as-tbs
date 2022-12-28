@@ -1,32 +1,20 @@
 //import { TBS } from "./src/tbs";
-type string8 = string;
 import { JSON } from "json-as";
-import { TBS } from "./src/tbs";
+import { TBS, string8 } from "./src/tbs";
+// type string8 = string;
 // ObjectID, KeyID, ValueLength, ...Value, KeyID, ValueLength, ...Value
 
 // @ts-ignore
-@json
+@serializable
 class Vec3 {
     x!: i8;
     y!: i8;
     z!: i8;
-    @inline
+    /*@inline
     __TBS_Instantiate(): Vec3 {
         return changetype<Vec3>(__new(offsetof<Vec3>(), idof<Vec3>()));
-    }
-    private __TBS_ByteLength: i32 = 3;
-   /* @inline
-    __TBS_Deserialize(input: ArrayBuffer, out: Vec3): void {
-        out.x = load<i8>(changetype<usize>(input));
-        out.y = load<i8>(changetype<usize>(input) + <usize>1);
-        out.z = load<i8>(changetype<usize>(input) + <usize>2);
-    }
-    @inline
-    __TBS_Serialize(input: Vec3, out: ArrayBuffer): void {
-        store<i8>(changetype<usize>(out), input.x);
-        store<i8>(changetype<usize>(out) + <usize>1, input.y);
-        store<i8>(changetype<usize>(out) + <usize>2, input.z);
     }*/
+    //private __TBS_ByteLength: i32 = 3;
 }
 
 // @ts-ignore
@@ -34,24 +22,12 @@ class Vec3 {
 class Position {
     name!: string8;
     coords!: Vec3;
-    @inline
+    /*@inline
     __TBS_Instantiate(): Position {
         const result = changetype<Position>(__new(offsetof<Position>(), idof<Position>()));
         result.coords = vec.__TBS_Instantiate();
         return result;
-    }
-    private __TBS_ByteLength: i32 = 10;
-    @inline
-    __TBS_Deserialize(input: ArrayBuffer, out: Position): void {
-        out.name = String.UTF8.decodeUnsafe(changetype<usize>(input) + <usize>1, 6);
-        out.coords.__TBS_Deserialize(changetype<ArrayBuffer>(changetype<usize>(input) + <usize>1 + <usize>out.name.length), out.coords);
-    }
-    @inline
-    __TBS_Serialize(input: Position, out: ArrayBuffer): void {
-        store<u8>(changetype<usize>(out), input.name.length);
-        memory.copy(changetype<usize>(out) + <usize>1, changetype<usize>(String.UTF8.encode(input.name)), <usize>input.name.length);
-        input.coords.__TBS_Serialize(input.coords, changetype<ArrayBuffer>(changetype<usize>(out) + <usize>1 + <usize>input.name.length));
-    }
+    }*/
 }
 
 const vec: Vec3 = {

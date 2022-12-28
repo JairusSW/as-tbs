@@ -25,6 +25,7 @@ class TBSTransform extends BaseVisitor {
         super(...arguments);
         this.schemasList = [];
         this.sources = [];
+        this.instantiates = new Map();
     }
     visitMethodDeclaration() { }
     visitFieldDeclaration(node) {
@@ -75,6 +76,7 @@ class TBSTransform extends BaseVisitor {
         let serializeFunc = [];
         let offsetDynamicSerialize = "";
         let offsetDynamicDeserialize = "";
+        let instantiateStmts = "\n";
         let offset = 0;
         for (let i = 0; i < this.currentClass.keys.length; i++) {
             const key = this.currentClass.keys[i][0];
@@ -120,12 +122,13 @@ class TBSTransform extends BaseVisitor {
                 case "string8": {
                     offset++;
                     serializeFunc.push(`\tstore<u8>(changetype<usize>(out)${offset == 1 ? "" : ` + <usize>${offset - 1}`}, input.${key}.length);\nmemory.copy(changetype<usize>(out)${offset == 0 ? "" : ` + <usize>${offset}`}${offsetDynamicSerialize}, changetype<usize>(String.UTF8.encode(input.${key})), <usize>input.${key}.length);`);
-                    deserializeFunc.push(`\tout.${key} = String.UTF8.decodeUnsafe(changetype<usize>(input)${offset == 0 ? "" : ` + <usize>${offset}`}, load<u8>(changetype<usize>(out)${offset == -1 ? "" : ` + <usize>${offset - 1}`}${offsetDynamicDeserialize}))`);
+                    deserializeFunc.push(`\tout.${key} = String.UTF8.decodeUnsafe(changetype<usize>(input)${offset == 0 ? "" : ` + <usize>${offset}`}, load<u8>(changetype<usize>(input)${offset == -1 ? "" : ` + <usize>${offset - 1}`}${offsetDynamicDeserialize}))`);
                     offsetDynamicSerialize += ` + <usize>input.${key}.length`;
                     offsetDynamicDeserialize += ` + <usize>out.${key}.length`;
                     break;
                 }
                 default: {
+                    instantiateStmts += `result.${key} = changetype<${type}>(__new(offsetof<${type}>(), idof<${type}>())).__TBS_Instantiate();\n`;
                     serializeFunc.push(`\tinput.${key}.__TBS_Serialize(input.${key}, changetype<ArrayBuffer>(changetype<usize>(out)${offsetText}${offsetDynamicSerialize}))`);
                     deserializeFunc.push(`\tout.${key}.__TBS_Deserialize(changetype<ArrayBuffer>(changetype<usize>(input)${offsetText}${offsetDynamicDeserialize}), out.${key});`);
                     // TODO: Work with offset here
@@ -136,8 +139,11 @@ class TBSTransform extends BaseVisitor {
         for (const part of this.schemasList.filter(v => this.currentClass.types.includes(v.name))) {
             offset += part.offset;
         }
-        const byteLengthProperty = SimpleParser.parseClassMember(`private __TBS_ByteLength: i32 = ${offset};`, node);
-        //node.members.push(byteLengthProperty);
+        const instantiateMethod = SimpleParser.parseClassMember(`@inline __TBS_Instantiate(): ${this.currentClass.name} {\n\tconst result = changetype<${this.currentClass.name}>(__new(offsetof<${this.currentClass.name}>(), idof<${this.currentClass.name}>()));${instantiateStmts}return result;\n}`, node);
+        node.members.push(instantiateMethod);
+        const byteLengthMethod = SimpleParser.parseClassMember(`@inline __TBS_ByteLength(): i32 {\n\treturn ${offset}${offsetDynamicSerialize.replaceAll("<usize>", "").replaceAll("input", "this")};\n}`, node);
+        //console.log(toString(byteLengthMethod))
+        node.members.push(byteLengthMethod);
         // console.log(`__TBS_Serialize(input: ${this.currentClass.name}, out: ArrayBuffer): void {\n${serializeFunc.join("\n")}\n}`)
         const deserializeMethod = SimpleParser.parseClassMember(`@inline __TBS_Deserialize(input: ArrayBuffer, out: ${this.currentClass.name}): void {\n${deserializeFunc.join("\n")}\n}`, node);
         node.members.push(deserializeMethod);
@@ -158,55 +164,15 @@ function djb2Hash(str) {
         h = ((h << 5) - h + points[p].codePointAt(0)) | 0;
     return h;
 }
-function typeToSize(data) {
-    switch (data) {
-        case "i8": {
-            return 1;
-        }
-        case "i16": {
-            return 2;
-        }
-        case "i32": {
-            return 4;
-        }
-        case "i64": {
-            return 8;
-        }
-        case "u8": {
-            return 1;
-        }
-        case "u16": {
-            return 2;
-        }
-        case "u32": {
-            return 4;
-        }
-        case "u64": {
-            return 8;
-        }
-        case "string8": {
-            return 4;
-        }
-        case "string": {
-            return 4;
-        }
-        case "boolean" || "bool": {
-            return 1;
-        }
-    }
-    return 0;
-}
 //export default registerDecorator(new TBSTransform());
 export default class Transformer extends Transform {
     // Trigger the transform after parse.
     afterParse(parser) {
-        // Create new transform
-        const transformer = new TBSTransform();
         // Loop over every source
         for (const source of parser.sources) {
             // Ignore all lib (std lib). Visit everything else.
             if (!source.isLibrary && !source.internalPath.startsWith(`~lib/`)) {
-                transformer.visit(source);
+                new TBSTransform().visit(source);
             }
         }
     }

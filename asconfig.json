@@ -3,7 +3,7 @@
     "test": {
       "outFile": "build/test.wasm",
       "sourceMap": false,
-      "optimizeLevel": 3,
+      "optimizeLevel": 0,
       "shrinkLevel": 0,
       "converge": false,
       "noAssert": false

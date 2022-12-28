@@ -8,13 +8,14 @@ const f64ID: u8 = 6;
 const i32ID: u8 = 7;
 const i64ID: u8 = 8;
 
+export type string8 = string;
 export namespace TBS {
     // @ts-ignore
     @inline export function serialize<T>(data: T): ArrayBuffer {
         // @ts-ignore
         if (isDefined(data.__TBS_ByteLength)) {
             // @ts-ignore
-            const out = new ArrayBuffer(data.__TBS_ByteLength);
+            const out = new ArrayBuffer(data.__TBS_ByteLength());
             // @ts-ignore
             data.__TBS_Serialize(data, out);
             return out;
