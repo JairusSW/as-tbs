@@ -1,16 +1,6 @@
 import { getName, toString } from "visitor-as/dist/utils.js";
 import { BaseVisitor, SimpleParser } from "visitor-as/dist/index.js";
 import { Transform } from "assemblyscript/dist/transform.js";
-const NullID = 0;
-const TrueID = 1;
-const FalseID = 2;
-const String8ID = 3;
-const String16ID = 4;
-const ArrayID = 5;
-const f32ID = 6;
-const f64ID = 7;
-const i32ID = 8;
-const i64ID = 9;
 class SchemaData {
     constructor() {
         this.keys = [];
@@ -57,7 +47,8 @@ class TBSTransform extends BaseVisitor {
         }
         // Prevent from being triggered twice
         for (const member of node.members) {
-            //if (member.name.text == "__TBS_ByteLength") return;
+            if (member.name.text == "__TBS_ByteLength")
+                return;
         }
         this.currentClass = {
             name: toString(node.name),
@@ -82,7 +73,6 @@ class TBSTransform extends BaseVisitor {
             const key = this.currentClass.keys[i][0];
             const type = this.currentClass.keys[i][2];
             const offsetText = offset == 0 ? "" : ` + <usize>${offset}`;
-            console.log(type);
             switch (type) {
                 case "boolean": {
                     serializeFunc.push(`\tstore<u8>(changetype<usize>(out)${offsetText}${offsetDynamicSerialize}, input.${key});`);
@@ -138,6 +128,7 @@ class TBSTransform extends BaseVisitor {
                     instantiateStmts += `result.${key} = changetype<${type}>(__new(offsetof<${type}>(), idof<${type}>())).__TBS_Instantiate();\n`;
                     serializeFunc.push(`\tinput.${key}.__TBS_Serialize(input.${key}, changetype<ArrayBuffer>(changetype<usize>(out)${offsetText}${offsetDynamicSerialize}))`);
                     deserializeFunc.push(`\tout.${key}.__TBS_Deserialize(changetype<ArrayBuffer>(changetype<usize>(input)${offsetText}${offsetDynamicDeserialize}), out.${key});`);
+                    // @ts-ignore
                     offset += (_b = this.schemasList.find(v => v.name == type)) === null || _b === void 0 ? void 0 : _b.keyNames.length;
                     break;
                 }
@@ -149,9 +140,9 @@ class TBSTransform extends BaseVisitor {
         }*/
         const instantiateMethod = SimpleParser.parseClassMember(`@inline __TBS_Instantiate(): ${this.currentClass.name} {\n\tconst result = changetype<${this.currentClass.name}>(__new(offsetof<${this.currentClass.name}>(), idof<${this.currentClass.name}>()));${instantiateStmts}return result;\n}`, node);
         node.members.push(instantiateMethod);
+        // @ts-ignore
         const byteLengthMethod = SimpleParser.parseClassMember(`@inline __TBS_ByteLength(): i32 {\n\treturn ${offset}${offsetDynamicSerialize.replaceAll("<usize>", "").replaceAll("input", "this")};\n}`, node);
         //console.log(toString(byteLengthMethod))
-        node.members.push(byteLengthMethod);
         // console.log(`__TBS_Serialize(input: ${this.currentClass.name}, out: ArrayBuffer): void {\n${serializeFunc.join("\n")}\n}`)
         const deserializeMethod = SimpleParser.parseClassMember(`@inline __TBS_Deserialize(input: ArrayBuffer, out: ${this.currentClass.name}): void {\n${deserializeFunc.join("\n")}\n}`, node);
         node.members.push(deserializeMethod);
