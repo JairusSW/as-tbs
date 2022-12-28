@@ -41,7 +41,7 @@ class TBSTransform extends BaseVisitor {
         this.currentClass.types.push(type);
     }
     visitClassDeclaration(node) {
-        var _a;
+        var _a, _b;
         let foundDecorator = false;
         if (!((_a = node.decorators) === null || _a === void 0 ? void 0 : _a.length))
             return;
@@ -82,7 +82,14 @@ class TBSTransform extends BaseVisitor {
             const key = this.currentClass.keys[i][0];
             const type = this.currentClass.keys[i][2];
             const offsetText = offset == 0 ? "" : ` + <usize>${offset}`;
+            console.log(type);
             switch (type) {
+                case "boolean": {
+                    serializeFunc.push(`\tstore<u8>(changetype<usize>(out)${offsetText}${offsetDynamicSerialize}, input.${key});`);
+                    deserializeFunc.push(`\tout.${key} = load<${type}>(changetype<usize>(input)${offsetText}${offsetDynamicDeserialize});`);
+                    offset++;
+                    break;
+                }
                 case "i8" || "u8": {
                     serializeFunc.push(`\tstore<${type}>(changetype<usize>(out)${offsetText}${offsetDynamicSerialize}, input.${key});`);
                     deserializeFunc.push(`\tout.${key} = load<${type}>(changetype<usize>(input)${offsetText}${offsetDynamicDeserialize});`);
@@ -131,14 +138,15 @@ class TBSTransform extends BaseVisitor {
                     instantiateStmts += `result.${key} = changetype<${type}>(__new(offsetof<${type}>(), idof<${type}>())).__TBS_Instantiate();\n`;
                     serializeFunc.push(`\tinput.${key}.__TBS_Serialize(input.${key}, changetype<ArrayBuffer>(changetype<usize>(out)${offsetText}${offsetDynamicSerialize}))`);
                     deserializeFunc.push(`\tout.${key}.__TBS_Deserialize(changetype<ArrayBuffer>(changetype<usize>(input)${offsetText}${offsetDynamicDeserialize}), out.${key});`);
-                    // TODO: Work with offset here
+                    offset += (_b = this.schemasList.find(v => v.name == type)) === null || _b === void 0 ? void 0 : _b.keyNames.length;
+                    break;
                 }
             }
         }
         this.currentClass.offset = offset;
-        for (const part of this.schemasList.filter(v => this.currentClass.types.includes(v.name))) {
+        /*for (const part of this.schemasList.filter(v => this.currentClass.types.includes(v.name))) {
             offset += part.offset;
-        }
+        }*/
         const instantiateMethod = SimpleParser.parseClassMember(`@inline __TBS_Instantiate(): ${this.currentClass.name} {\n\tconst result = changetype<${this.currentClass.name}>(__new(offsetof<${this.currentClass.name}>(), idof<${this.currentClass.name}>()));${instantiateStmts}return result;\n}`, node);
         node.members.push(instantiateMethod);
         const byteLengthMethod = SimpleParser.parseClassMember(`@inline __TBS_ByteLength(): i32 {\n\treturn ${offset}${offsetDynamicSerialize.replaceAll("<usize>", "").replaceAll("input", "this")};\n}`, node);

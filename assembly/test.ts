@@ -18,6 +18,7 @@ class Position {
     // Will be encoded/decoded as a UTF-8 string.
     // UTF-16 support will land soon.
     pos!: Vec3;
+    is2fa: boolean;
 }
 
 const pos: Position = {
@@ -27,19 +28,17 @@ const pos: Position = {
         x: 3,
         y: 1,
         z: 8
-    }
+    },
+    is2fa: true
 };
 
 const vec: Vec3 = {
-    x: 2,
-    y: 5,
-    z: 3
+    x: 3,
+    y: 1,
+    z: 8
 }
 
 const serialized = TBS.serialize(pos);
-console.log(Uint8Array.wrap(serialized).join(" "));
-
-store<i8>(changetype<usize>(vec) + offsetof<Vec3>("y"), 9);
 console.log(Uint8Array.wrap(TBS.serialize(vec)).join(" "));
 const parsed = TBS.parse<Position>(serialized);
 
