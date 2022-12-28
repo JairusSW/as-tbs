@@ -47,11 +47,6 @@ class TBSTransform extends BaseVisitor {
         if (!node.members) {
             return;
         }
-        
-        // Prevent from being triggered twice
-        for (const member of node.members) {
-            if (member.name.text == "__TBS_ByteLength") return;
-        }
 
         this.currentClass = {
             name: toString(node.name),
@@ -153,9 +148,9 @@ class TBSTransform extends BaseVisitor {
         node.members.push(instantiateMethod);
         // @ts-ignore
         const byteLengthMethod = SimpleParser.parseClassMember(`@inline __TBS_ByteLength(): i32 {\n\treturn ${offset}${offsetDynamicSerialize.replaceAll("<usize>", "").replaceAll("input", "this")};\n}`, node);
-        //console.log(toString(byteLengthMethod))
 
-       // console.log(`__TBS_Serialize(input: ${this.currentClass.name}, out: ArrayBuffer): void {\n${serializeFunc.join("\n")}\n}`)
+        node.members.push(byteLengthMethod);
+
         const deserializeMethod = SimpleParser.parseClassMember(
             `@inline __TBS_Deserialize(input: ArrayBuffer, out: ${this.currentClass.name}): void {\n${deserializeFunc.join("\n")}\n}`,
             node
