@@ -1,20 +1,21 @@
 //import { TBS } from "./src/tbs";
 type string8 = string;
 import { JSON } from "json-as";
+import { TBS } from "./src/tbs";
 // ObjectID, KeyID, ValueLength, ...Value, KeyID, ValueLength, ...Value
 
 // @ts-ignore
-//@json
+@json
 @tbs
 class Vec3 {
     x!: i8;
     y!: i8;
     z!: i8;
-    /*@inline
+    @inline
     __TBS_Instantiate(): Vec3 {
         return changetype<Vec3>(__new(offsetof<Vec3>(), idof<Vec3>()));
     }
-    private __TBS_ByteLength: usize = 3;
+    private __TBS_ByteLength: i32 = 3;
     @inline
     __TBS_Deserialize(input: ArrayBuffer, out: Vec3): void {
         out.x = load<i8>(changetype<usize>(input));
@@ -26,32 +27,32 @@ class Vec3 {
         store<i8>(changetype<usize>(out), input.x);
         store<i8>(changetype<usize>(out) + <usize>1, input.y);
         store<i8>(changetype<usize>(out) + <usize>2, input.z);
-    }*/
+    }
 }
 
 // @ts-ignore
-//@json
+@json
     @tbs
 class Position {
     id!: i8;
     coords!: Vec3;
-    /*@inline
+    @inline
     __TBS_Instantiate(): Position {
         const result = changetype<Position>(__new(offsetof<Position>(), idof<Position>()));
-        result.coords = result.coords.__TBS_Instantiate();
+        result.coords = vec.__TBS_Instantiate();
         return result;
     }
-    private __TBS_ByteLength: usize = 4;
+    private __TBS_ByteLength: i32 = 4;
     @inline
     __TBS_Deserialize(input: ArrayBuffer, out: Position): void {
-        out.coords.__TBS_Deserialize(changetype<ArrayBuffer>(changetype<usize>(input) + <usize>1), out.coords);
         out.id = load<i8>(changetype<usize>(input));
+        out.coords.__TBS_Deserialize(changetype<ArrayBuffer>(changetype<usize>(input) + <usize>1), out.coords);
     }
     @inline
     __TBS_Serialize(input: Position, out: ArrayBuffer): void {
-        input.coords.__TBS_Serialize(input.coords, changetype<ArrayBuffer>(changetype<usize>(out) + <usize>1));
         store<i8>(changetype<usize>(out), input.id);
-    }*/
+        input.coords.__TBS_Serialize(input.coords, changetype<ArrayBuffer>(changetype<usize>(out) + <usize>1));
+    }
 }
 
 const vec: Vec3 = {
@@ -69,15 +70,15 @@ const pos: Position = {
     }
 }
 
-const serialized = new ArrayBuffer(pos.__TBS_ByteLength);
-pos.__TBS_Serialize(pos, serialized);
+const serialized = TBS.serialize(pos);
 console.log(Uint8Array.wrap(serialized).join(" "));
 
-//const parsed = pos.__TBS_Instantiate();
+store<i8>(changetype<usize>(vec) + offsetof<Vec3>("y"), 9);
+console.log(Uint8Array.wrap(TBS.serialize(vec)).join(" "));
+const parsed = TBS.parse<Position>(serialized);
 
-pos.__TBS_Deserialize(serialized, pos);
-
-//console.log(JSON.stringify(pos));
+console.log(Uint8Array.wrap(TBS.serialize(parsed)).join(" "));
+console.log(JSON.stringify(parsed));
 /*
 const keys = ["x", "y", "z"] //["valid", "x", "y", "z", "name"];
 

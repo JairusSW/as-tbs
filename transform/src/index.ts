@@ -130,12 +130,13 @@ class TBSTransform extends ClassDecorator {
                 default: {
                     serializeFunc.push(`\tinput.${key}.__TBS_Serialize(input.${key}, changetype<ArrayBuffer>(changetype<usize>(out)${offset == 0 ? "" : ` + <usize>${offset}`}))`);
                     deserializeFunc.push(`\tout.${key}.__TBS_Deserialize(changetype<ArrayBuffer>(changetype<usize>(input)${offset == 0 ? "" : ` + <usize>${offset}`}), out.${key});`);
+                    // TODO: Work with offset here
                 }
             }
         }
 
         this.currentClass.offset = offset;
-        
+
         for (const part of this.schemasList.filter(v => this.currentClass.types.includes(v.name))) {
             offset += part.offset;
         }

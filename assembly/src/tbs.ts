@@ -10,33 +10,52 @@ const i64ID: u8 = 8;
 
 export namespace TBS {
     // @ts-ignore
-    @inline
-    export function serialize<T>(data: T): ArrayBuffer {
+    @inline export function serialize<T>(data: T): ArrayBuffer {
         // @ts-ignore
-        //if (isDefined(T.__TBS_Serialize)) {
+        if (isDefined(data.__TBS_ByteLength)) {
             // @ts-ignore
-            const out = new ArrayBuffer(input.__TBS_ByteLength);
-            
+            const out = new ArrayBuffer(data.__TBS_ByteLength);
+            // @ts-ignore
             data.__TBS_Serialize(data, out);
             return out;
-        //}
-        //return unreachable();
+        }
+        return unreachable();
     }
     // @ts-ignore
-    @inline
-    export function parse<T>(data: ArrayBuffer): T {
-        //if (isManaged<T>() || isReference<T>()) {
+    @inline export function serializeTo<T>(data: T, out: ArrayBuffer): void {
+        // @ts-ignore
+        if (isDefined(data.__TBS_ByteLength)) {
             // @ts-ignore
-        const out: nonnull<T> = changetype<nonnull<T>>(__new(offsetof<nonnull<T>>(), idof<nonnull<T>>()));
+            data.__TBS_Serialize(data, out);
+        }
+        return unreachable();
+    }
+    // @ts-ignore
+    @inline export function parse<T>(data: ArrayBuffer): T {
+        if (isManaged<T>() || isReference<T>()) {
             // @ts-ignore
-           // if (isDefined(out.__TBS_Deserialize)) {
+            const out: nonnull<T> = changetype<nonnull<T>>(__new(offsetof<nonnull<T>>(), idof<nonnull<T>>())).__TBS_Instantiate();
+            //heap.free(changetype<usize>(out));
+            // @ts-ignore
+            if (isDefined(out.__TBS_Deserialize)) {
                 // @ts-ignore
-        
                 out.__TBS_Deserialize(data, out);
                 return out;
-            //}
-            //return unreachable();
-       // }
-        //return unreachable();
+            }
+            return unreachable();
+        }
+        return unreachable();
+    }
+    // @ts-ignore
+    @inline export function parseTo<T>(data: ArrayBuffer, out: T): void {
+        if (isManaged<T>() || isReference<T>()) {
+            // @ts-ignore
+            if (isDefined(out.__TBS_Deserialize)) {
+                // @ts-ignore
+                out.__TBS_Deserialize(data, out);
+            }
+            return unreachable();
+        }
+        return unreachable();
     }
 }
