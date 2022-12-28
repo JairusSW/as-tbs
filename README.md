@@ -92,10 +92,15 @@ Serializing the data `{"name":"Markus Persson","id":9,"pos":{"x":3,"y":1,"z":8}}
 Here's a breakdown.
 
 `14`: length of string
+
 `77-110`: UTF-8 encoded string data
+
 `9`: id value
+
 `3`: pos.x value
+
 `1`: pos.y value
+
 `8`: pos.z value
 
 ## Benchmark
