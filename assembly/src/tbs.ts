@@ -15,10 +15,9 @@ export namespace TBS {
         // @ts-ignore
         //if (isDefined(T.__TBS_Serialize)) {
             // @ts-ignore
-        let input = T;
             const out = new ArrayBuffer(input.__TBS_ByteLength);
             
-            input.__TBS_Serialize(data, out);
+            data.__TBS_Serialize(data, out);
             return out;
         //}
         //return unreachable();
@@ -29,12 +28,11 @@ export namespace TBS {
         //if (isManaged<T>() || isReference<T>()) {
             // @ts-ignore
         const out: nonnull<T> = changetype<nonnull<T>>(__new(offsetof<nonnull<T>>(), idof<nonnull<T>>()));
-        type input = T;
             // @ts-ignore
            // if (isDefined(out.__TBS_Deserialize)) {
                 // @ts-ignore
         
-                T.__TBS_Deserialize(data, out);
+                out.__TBS_Deserialize(data, out);
                 return out;
             //}
             //return unreachable();
