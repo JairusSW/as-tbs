@@ -15,7 +15,7 @@ class Vec3 {
         return changetype<Vec3>(__new(offsetof<Vec3>(), idof<Vec3>()));
     }
     private __TBS_ByteLength: i32 = 3;
-    @inline
+   /* @inline
     __TBS_Deserialize(input: ArrayBuffer, out: Vec3): void {
         out.x = load<i8>(changetype<usize>(input));
         out.y = load<i8>(changetype<usize>(input) + <usize>1);
@@ -26,11 +26,11 @@ class Vec3 {
         store<i8>(changetype<usize>(out), input.x);
         store<i8>(changetype<usize>(out) + <usize>1, input.y);
         store<i8>(changetype<usize>(out) + <usize>2, input.z);
-    }
+    }*/
 }
 
 // @ts-ignore
-@json
+@serializable
 class Position {
     name!: string8;
     coords!: Vec3;
