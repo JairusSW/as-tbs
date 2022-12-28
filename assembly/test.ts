@@ -5,8 +5,7 @@ import { TBS } from "./src/tbs";
 // ObjectID, KeyID, ValueLength, ...Value, KeyID, ValueLength, ...Value
 
 // @ts-ignore
-@json
-@tbs
+@serializable
 class Vec3 {
     x!: i8;
     y!: i8;
@@ -31,8 +30,7 @@ class Vec3 {
 }
 
 // @ts-ignore
-@json
-@tbs
+@serializable
 class Position {
     id!: i8;
     coords!: Vec3;

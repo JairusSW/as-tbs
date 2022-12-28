@@ -1,6 +1,6 @@
-import { ClassDecorator, registerDecorator, } from "visitor-as/dist/decorator.js";
 import { getName, toString } from "visitor-as/dist/utils.js";
-import { SimpleParser } from "visitor-as/dist/index.js";
+import { BaseVisitor, SimpleParser } from "visitor-as/dist/index.js";
+import { Transform } from "assemblyscript/dist/transform.js";
 const NullID = 0;
 const TrueID = 1;
 const FalseID = 2;
@@ -20,7 +20,7 @@ class SchemaData {
         this.offset = 0;
     }
 }
-class TBSTransform extends ClassDecorator {
+class TBSTransform extends BaseVisitor {
     constructor() {
         super(...arguments);
         this.schemasList = [];
@@ -40,21 +40,22 @@ class TBSTransform extends ClassDecorator {
         this.currentClass.types.push(type);
     }
     visitClassDeclaration(node) {
-        console.log(`Visiting ${node.name.text}`);
+        let foundDecorator = false;
+        for (const decorator of node.decorators) {
+            // @ts-ignore
+            if (decorator.name.text.toLowerCase() == "tbs" || decorator.name.text.toLowerCase() == "serializable")
+                foundDecorator = true;
+        }
+        if (!foundDecorator)
+            return;
         if (!node.members) {
             return;
         }
         // Prevent from being triggered twice
         for (const member of node.members) {
-            console.log(member.name.text);
             if (member.name.text == "__TBS_ByteLength")
                 return;
         }
-        // This was triggering twice. I'm lazy
-        // @ts-ignore
-        //if (node.covered) return;
-        // @ts-ignore
-        //node.covered = true;
         this.currentClass = {
             name: toString(node.name),
             keys: [],
@@ -114,6 +115,7 @@ class TBSTransform extends ClassDecorator {
                 default: {
                     serializeFunc.push(`\tinput.${key}.__TBS_Serialize(input.${key}, changetype<ArrayBuffer>(changetype<usize>(out)${offset == 0 ? "" : ` + <usize>${offset}`}))`);
                     deserializeFunc.push(`\tout.${key}.__TBS_Deserialize(changetype<ArrayBuffer>(changetype<usize>(input)${offset == 0 ? "" : ` + <usize>${offset}`}), out.${key});`);
+                    // TODO: Work with offset here
                 }
             }
         }
@@ -131,8 +133,8 @@ class TBSTransform extends ClassDecorator {
         this.schemasList.push(this.currentClass);
         console.log(toString(node));
     }
-    get name() {
-        return "tbs";
+    visitSource(node) {
+        super.visitSource(node);
     }
 }
 function djb2Hash(str) {
@@ -181,4 +183,19 @@ function typeToSize(data) {
     }
     return 0;
 }
-export default registerDecorator(new TBSTransform());
+//export default registerDecorator(new TBSTransform());
+export default class Transformer extends Transform {
+    // Trigger the transform after parse.
+    afterParse(parser) {
+        // Create new transform
+        const transformer = new TBSTransform();
+        // Loop over every source
+        for (const source of parser.sources) {
+            // Ignore all lib (std lib). Visit everything else.
+            if (!source.isLibrary && !source.internalPath.startsWith(`~lib/`)) {
+                transformer.visit(source);
+            }
+        }
+    }
+}
+;

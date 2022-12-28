@@ -10,7 +10,10 @@
     }
   },
   "options": {
-    "transform": [],
+    "transform": [
+      "./transform",
+      "json-as/transform"
+    ],
     "bindings": "esm",
     "exportStart": "_start"
   },
