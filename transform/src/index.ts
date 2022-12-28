@@ -47,6 +47,7 @@ class TBSTransform extends BaseVisitor {
     }
     visitClassDeclaration(node: ClassDeclaration): void {
         let foundDecorator = false;
+        if (!node.decorators?.length) return;
         for (const decorator of node.decorators!) {
             // @ts-ignore
             if (decorator.name.text.toLowerCase() == "tbs" || decorator.name.text.toLowerCase() == "serializable") foundDecorator = true;
@@ -87,48 +88,54 @@ class TBSTransform extends BaseVisitor {
         for (let i = 0; i < this.currentClass.keys.length; i++) {
             const key = this.currentClass.keys[i][0];
             const type = this.currentClass.keys[i][2];
-
+            const offsetText = offset == 0 ? "" : ` + <usize>${offset}`;
             switch (type) {
                 case "i8" || "u8": {
-                    serializeFunc.push(`\tstore<${type}>(changetype<usize>(out)${offset == 0 ? "" : ` + <usize>${offset}`}, input.${key});`);
-                    deserializeFunc.push(`\tout.${key} = load<${type}>(changetype<usize>(input)${offset == 0 ? "" : ` + <usize>${offset}`});`);
+                    serializeFunc.push(`\tstore<${type}>(changetype<usize>(out=)${offsetText}, input.${key});`);
+                    deserializeFunc.push(`\tout.${key} = load<${type}>(changetype<usize>(input)${offsetText});`);
                     offset++;
                     break;
                 }
                 case "i16" || "u16": {
-                    serializeFunc.push(`\tstore<${type}>(changetype<usize>(out)${offset == 0 ? "" : ` + <usize>${offset}`}, input.${key});`);
-                    deserializeFunc.push(`\tout.${key} = load<${type}>(changetype<usize>(input)${offset == 0 ? "" : ` + <usize>${offset}`});`);
+                    serializeFunc.push(`\tstore<${type}>(changetype<usize>(out)${offsetText}, input.${key});`);
+                    deserializeFunc.push(`\tout.${key} = load<${type}>(changetype<usize>(input)${offsetText});`);
                     offset += 2;
                     break;
                 }
                 case "i32" || "u32": {
-                    serializeFunc.push(`\tstore<${type}>(changetype<usize>(out)${offset == 0 ? "" : ` + <usize>${offset}`}, input.${key});`);
-                    deserializeFunc.push(`\tout.${key} = load<${type}>(changetype<usize>(input)${offset == 0 ? "" : ` + <usize>${offset}`});`);
+                    serializeFunc.push(`\tstore<${type}>(changetype<usize>(out)${offsetText}, input.${key});`);
+                    deserializeFunc.push(`\tout.${key} = load<${type}>(changetype<usize>(input)${offsetText});`);
                     offset += 4;
                     break;
                 }
                 case "i64" || "u64": {
-                    serializeFunc.push(`\tstore<${type}>(changetype<usize>(out)${offset == 0 ? "" : ` + <usize>${offset}`}, input.${key});`);
-                    deserializeFunc.push(`\tout.${key} = load<${type}>(changetype<usize>(input)${offset == 0 ? "" : ` + <usize>${offset}`});`);
+                    serializeFunc.push(`\tstore<${type}>(changetype<usize>(out)${offsetText}, input.${key});`);
+                    deserializeFunc.push(`\tout.${key} = load<${type}>(changetype<usize>(input)${offsetText});`);
                     offset += 8;
                     break;
                 }
                 case "f32": {
-                    serializeFunc.push(`\tstore<${type}>(changetype<usize>(out)${offset == 0 ? "" : ` + <usize>${offset}`}, input.${key});`);
-                    deserializeFunc.push(`\tout.${key} = load<${type}>(changetype<usize>(input)${offset == 0 ? "" : ` + <usize>${offset}`});`);
+                    serializeFunc.push(`\tstore<${type}>(changetype<usize>(out)${offsetText}, input.${key});`);
+                    deserializeFunc.push(`\tout.${key} = load<${type}>(changetype<usize>(input)${offsetText});`);
                     offset += 4;
                     break;
                 }
                 case "f64": {
-                    serializeFunc.push(`\tstore<${type}>(changetype<usize>(out)${offset == 0 ? "" : ` + <usize>${offset}`}, input.${key});`);
-                    deserializeFunc.push(`\tout.${key} = load<${type}>(changetype<usize>(input)${offset == 0 ? "" : ` + <usize>${offset}`});`);
+                    serializeFunc.push(`\tstore<${type}>(changetype<usize>(out)${offsetText}, input.${key});`);
+                    deserializeFunc.push(`\tout.${key} = load<${type}>(changetype<usize>(input)${offsetText});`);
                     offset += 8
                         ;
                     break;
                 }
+                case "string8": {
+                    offset++;
+                    serializeFunc.push(`\tstore<u8>(changetype<usize>(input)${offset == 1 ? "" : ` + <usize>${offset - 1}`}, input.${key}.length);\nmemory.copy(changetype<usize>(out)${offsetText}, changetype<usize>(String.UTF8.encode(input.${key})), <usize>input.${key}.length);`);
+                    deserializeFunc.push(`\tout.${key} = String.UTF8.decodeUnsafe(changetype<usize>(out)${offset == 1 ? "" : ` + <usize>${offset - 1}`}, load<u8>(changetype<usize>(out)${offsetText}))`);
+                    break;
+                }
                 default: {
-                    serializeFunc.push(`\tinput.${key}.__TBS_Serialize(input.${key}, changetype<ArrayBuffer>(changetype<usize>(out)${offset == 0 ? "" : ` + <usize>${offset}`}))`);
-                    deserializeFunc.push(`\tout.${key}.__TBS_Deserialize(changetype<ArrayBuffer>(changetype<usize>(input)${offset == 0 ? "" : ` + <usize>${offset}`}), out.${key});`);
+                    serializeFunc.push(`\tinput.${key}.__TBS_Serialize(input.${key}, changetype<ArrayBuffer>(changetype<usize>(out)${offsetText}))`);
+                    deserializeFunc.push(`\tout.${key}.__TBS_Deserialize(changetype<ArrayBuffer>(changetype<usize>(input)${offsetText}), out.${key});`);
                     // TODO: Work with offset here
                 }
             }

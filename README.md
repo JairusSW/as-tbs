@@ -12,6 +12,18 @@ Serialize Vec3: 78M ops/s
 Deserialize Vec3: 84M ops/s
 ```
 
+**Examples**
+
+JSON: `{"name":"jairus","coords":{"x":2,"y":5,"z":3}}`
+TBS: `6 106 97 105 114 117 115 2 5 3`
+
+```
+6 is the length of "jairus"
+106-115 is the UTF8 content of "jairus"
+2 is coords.x
+5 is coords.y
+3 is coords.z
+
 **Ser/de points**
 
 TBS ser/de from and to a flat data structure.
@@ -113,8 +125,6 @@ Other types of data (non-object)
 These are just se/de to their respective types.
 
 TODO
-- Move away from i32[]. ArrayBuffers instead
-- Add support for all number types
 - Discuss transferring schema patterns from one location to another. (Up to the developer or use some header?)
 - Possibly omit all typing? Designated by the schema
 - Add validiy checking
