@@ -3,47 +3,37 @@ import { JSON } from "json-as";
 import { TBS, string8 } from "./src/tbs";
 // type string8 = string;
 // ObjectID, KeyID, ValueLength, ...Value, KeyID, ValueLength, ...Value
-
-// @ts-ignore
+// If you add JSON, don't add the @json decorator. @serializable works here.
 @serializable
 class Vec3 {
     x!: i8;
     y!: i8;
     z!: i8;
-    /*@inline
-    __TBS_Instantiate(): Vec3 {
-        return changetype<Vec3>(__new(offsetof<Vec3>(), idof<Vec3>()));
-    }*/
-    //private __TBS_ByteLength: i32 = 3;
 }
 
-// @ts-ignore
 @serializable
 class Position {
-    name!: string8;
-    coords!: Vec3;
-    /*@inline
-    __TBS_Instantiate(): Position {
-        const result = changetype<Position>(__new(offsetof<Position>(), idof<Position>()));
-        result.coords = vec.__TBS_Instantiate();
-        return result;
-    }*/
+    name: string8;
+    id: i8;
+    // Will be encoded/decoded as a UTF-8 string.
+    // UTF-16 support will land soon.
+    pos!: Vec3;
 }
+
+const pos: Position = {
+    name: "Markus Persson",
+    id: 9,
+    pos: {
+        x: 3,
+        y: 1,
+        z: 8
+    }
+};
 
 const vec: Vec3 = {
     x: 2,
     y: 5,
     z: 3
-}
-
-const pos: Position = {
-    name: "jairus",
-    // 106 97 105 114 117 115
-    coords: {
-        x: 2,
-        y: 5,
-        z: 3
-    }
 }
 
 const serialized = TBS.serialize(pos);
