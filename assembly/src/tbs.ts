@@ -11,7 +11,7 @@ const i64ID: u8 = 8;
 export namespace TBS {
     // @ts-ignore
     @inline
-        export function serialize<T>(data: T): ArrayBuffer {
+    export function serialize<T>(data: T): ArrayBuffer {
         // @ts-ignore
         //if (isDefined(T.__TBS_Serialize)) {
             // @ts-ignore

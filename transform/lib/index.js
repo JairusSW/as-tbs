@@ -17,6 +17,7 @@ class SchemaData {
         this.types = [];
         this.keyNames = [];
         this.name = "";
+        this.offset = 0;
     }
 }
 class TBSTransform extends ClassDecorator {
@@ -58,40 +59,69 @@ class TBSTransform extends ClassDecorator {
             name: toString(node.name),
             keys: [],
             keyNames: [],
-            types: []
+            types: [],
+            offset: 0,
         };
         this.visit(node.members);
         for (let i = 0; i < this.currentClass.keyNames.length; i++) {
             const key = this.currentClass.keyNames[i];
             this.currentClass.keys.push([key, djb2Hash(key), this.currentClass.types[i]]);
         }
-        this.currentClass.keys.sort((a, b) => a[1] - b[1]);
-        let byteLength = 0;
-        for (let i = 0; i < this.currentClass.types.length; i++) {
-            const type = this.currentClass.types[i];
-            byteLength += typeToSize(type);
-        }
+        //this.currentClass.keys.sort((a, b) => a[1] - b[1]);
         let deserializeFunc = [];
         let serializeFunc = [];
-        const addLengths = [];
         let offset = 0;
         for (let i = 0; i < this.currentClass.keys.length; i++) {
             const key = this.currentClass.keys[i][0];
             const type = this.currentClass.keys[i][2];
             switch (type) {
-                case "i8" || "i16" || "i32" || "i64" || "u8" || "u16" || "u32" || "u64" || "f32" || "f64": {
+                case "i8" || "u8": {
                     serializeFunc.push(`\tstore<${type}>(changetype<usize>(out)${offset == 0 ? "" : ` + <usize>${offset}`}, input.${key});`);
                     deserializeFunc.push(`\tout.${key} = load<${type}>(changetype<usize>(input)${offset == 0 ? "" : ` + <usize>${offset}`});`);
+                    offset++;
+                    break;
+                }
+                case "i16" || "u16": {
+                    serializeFunc.push(`\tstore<${type}>(changetype<usize>(out)${offset == 0 ? "" : ` + <usize>${offset}`}, input.${key});`);
+                    deserializeFunc.push(`\tout.${key} = load<${type}>(changetype<usize>(input)${offset == 0 ? "" : ` + <usize>${offset}`});`);
+                    offset += 2;
+                    break;
+                }
+                case "i32" || "u32": {
+                    serializeFunc.push(`\tstore<${type}>(changetype<usize>(out)${offset == 0 ? "" : ` + <usize>${offset}`}, input.${key});`);
+                    deserializeFunc.push(`\tout.${key} = load<${type}>(changetype<usize>(input)${offset == 0 ? "" : ` + <usize>${offset}`});`);
+                    offset += 4;
+                    break;
+                }
+                case "i64" || "u64": {
+                    serializeFunc.push(`\tstore<${type}>(changetype<usize>(out)${offset == 0 ? "" : ` + <usize>${offset}`}, input.${key});`);
+                    deserializeFunc.push(`\tout.${key} = load<${type}>(changetype<usize>(input)${offset == 0 ? "" : ` + <usize>${offset}`});`);
+                    offset += 8;
+                    break;
+                }
+                case "f32": {
+                    serializeFunc.push(`\tstore<${type}>(changetype<usize>(out)${offset == 0 ? "" : ` + <usize>${offset}`}, input.${key});`);
+                    deserializeFunc.push(`\tout.${key} = load<${type}>(changetype<usize>(input)${offset == 0 ? "" : ` + <usize>${offset}`});`);
+                    offset += 4;
+                    break;
+                }
+                case "f64": {
+                    serializeFunc.push(`\tstore<${type}>(changetype<usize>(out)${offset == 0 ? "" : ` + <usize>${offset}`}, input.${key});`);
+                    deserializeFunc.push(`\tout.${key} = load<${type}>(changetype<usize>(input)${offset == 0 ? "" : ` + <usize>${offset}`});`);
+                    offset += 8;
                     break;
                 }
                 default: {
-                    serializeFunc.push(`\tinput.${key}.__TBS_Serialize(input.${key}, changetype<ArrayBuffer>(changetype<usize>(out) + input.${key}.__TBS_ByteLength))`);
-                    deserializeFunc.push(`\tout.${key}.__TBS_Deserialize(changetype<ArrayBuffer>(changetype<usize>(out) + out.${key}.__TBS_ByteLength), out.${key});`);
+                    serializeFunc.push(`\tinput.${key}.__TBS_Serialize(input.${key}, changetype<ArrayBuffer>(changetype<usize>(out)${offset == 0 ? "" : ` + <usize>${offset}`}))`);
+                    deserializeFunc.push(`\tout.${key}.__TBS_Deserialize(changetype<ArrayBuffer>(changetype<usize>(input)${offset == 0 ? "" : ` + <usize>${offset}`}), out.${key});`);
                 }
             }
-            offset += typeToSize(type);
         }
-        const byteLengthProperty = SimpleParser.parseClassMember(`private __TBS_ByteLength: usize = 3;`, node);
+        this.currentClass.offset = offset;
+        for (const part of this.schemasList.filter(v => this.currentClass.types.includes(v.name))) {
+            offset += part.offset;
+        }
+        const byteLengthProperty = SimpleParser.parseClassMember(`private __TBS_ByteLength: i32 = ${offset};`, node);
         node.members.push(byteLengthProperty);
         // console.log(`__TBS_Serialize(input: ${this.currentClass.name}, out: ArrayBuffer): void {\n${serializeFunc.join("\n")}\n}`)
         const deserializeMethod = SimpleParser.parseClassMember(`@inline __TBS_Deserialize(input: ArrayBuffer, out: ${this.currentClass.name}): void {\n${deserializeFunc.join("\n")}\n}`, node);
