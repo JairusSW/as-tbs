@@ -8,9 +8,9 @@ import { TBS, string8 } from "./src/tbs";
 // @ts-ignore
 @serializable
 class Vec3 {
-    x!: i8;
-    y!: i8;
-    z!: i8;
+    x!: f64;
+    y!: f64;
+    z!: f64;
 }
 
 // @ts-ignore
@@ -21,37 +21,15 @@ class Position {
     pos!: Vec3;
     moving!: boolean;
     data!: Array<u8>;
-    /*
-    @inline
-    __TBS_Instantiate(): Position {
-        const result = changetype<Position>(__new(offsetof<Position>(), idof<Position>()));
-        //result.pos = changetype<Vec3>(__new(offsetof<Vec3>(), idof<Vec3>())).__TBS_Instantiate();
-        //result.data = new Array<u8>();
-        return result;
-    }
-    @inline
-    __TBS_ByteLength(): i32 {
-        return this.data.length;
-    }
-    @inline
-    __TBS_Deserialize(input: ArrayBuffer, out: Position): void {
-        out.data = new Array<u8>(load<u8>(changetype<usize>(input)));
-        memory.copy(changetype<usize>(out.data.buffer), changetype<usize>(input) + <usize>1, load<u8>(changetype<usize>(input)));
-    }
-    @inline
-    __TBS_Serialize(input: Position, out: ArrayBuffer): void {
-        store<u8>(changetype<usize>(out), input.data.length);
-        memory.copy(changetype<usize>(out) + <usize>1, input.data.dataStart, <usize>input.data.length);;
-    }*/
 }
 
 const pos: Position = {
     name: "Markus Persson",
     id: 9,
     pos: {
-        x: 3,
-        y: 1,
-        z: 8
+        x: 3.1,
+        y: 1.1,
+        z: 8.1
     },
     moving: true,
     data: [1, 2, 3, 4, 5]
@@ -67,6 +45,7 @@ const serialized = TBS.serialize(pos);
 const parsed = TBS.parse<Position>(serialized);
 
 console.log(Uint8Array.wrap(serialized).join(" "));
+
 console.log(JSON.stringify(parsed));/*
 const arr: u8[] = [1,2,3,4,5,6]
 const buffer = new ArrayBuffer(7);
