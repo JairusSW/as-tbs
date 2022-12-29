@@ -90,8 +90,12 @@ const parsed = TBS.parse<Position>(serialized);
 
 Only object ser/de is implemented at the moment. You will be able to ser/de all valid types which is (Object/Struct, String16, String8, Array<T>, bool, i8-64, f32, f64, u8-64).
 
-Serializing the data `{"name":"Markus Persson","id":9,"pos":{"x":3,"y":1,"z":8},"moving":true}` results in the TBS-encoded data,
-`14 77 97 114 107 117 115 32 80 101 114 115 115 111 110 9 3 1 8 1 5 1 2 3 4 5`
+Serializing the data (JSON representation)
+`{"name":"Markus Persson","id":9,"pos":{"x":3,"y":1,"z":8},"moving":true,"data":[1,2,3,4,5]}` (91 byte length)
+results in the TBS-encoded data,
+`14 77 97 114 107 117 115 32 80 101 114 115 115 111 110 9 3 1 8 1 5 1 2 3 4 5` (26 bytes)
+
+Also, TBS is 3.5x smaller :)
 
 Here's a breakdown.
 
@@ -112,6 +116,7 @@ Here's a breakdown.
 `5`: data length (arr)
 
 `1-5`: data values
+
 ## Benchmark
 
 Didn't take benches recently, but ser/de takes:
