@@ -4,6 +4,8 @@ import { TBS, string8 } from "./src/tbs";
 // type string8 = string;
 // ObjectID, KeyID, ValueLength, ...Value, KeyID, ValueLength, ...Value
 // If you add JSON, don't add the @json decorator. @serializable works here.
+
+// @ts-ignore
 @serializable
 class Vec3 {
     x!: i8;
@@ -11,14 +13,36 @@ class Vec3 {
     z!: i8;
 }
 
+// @ts-ignore
 @serializable
 class Position {
-    name: string8;
-    id: i8;
-    // Will be encoded/decoded as a UTF-8 string.
-    // UTF-16 support will land soon.
+    name!: string8;
+    id!: i8;
     pos!: Vec3;
-    moving: boolean;
+    moving!: boolean;
+    data!: Array<u8>;
+    /*
+    @inline
+    __TBS_Instantiate(): Position {
+        const result = changetype<Position>(__new(offsetof<Position>(), idof<Position>()));
+        //result.pos = changetype<Vec3>(__new(offsetof<Vec3>(), idof<Vec3>())).__TBS_Instantiate();
+        //result.data = new Array<u8>();
+        return result;
+    }
+    @inline
+    __TBS_ByteLength(): i32 {
+        return this.data.length;
+    }
+    @inline
+    __TBS_Deserialize(input: ArrayBuffer, out: Position): void {
+        out.data = new Array<u8>(load<u8>(changetype<usize>(input)));
+        memory.copy(changetype<usize>(out.data.buffer), changetype<usize>(input) + <usize>1, load<u8>(changetype<usize>(input)));
+    }
+    @inline
+    __TBS_Serialize(input: Position, out: ArrayBuffer): void {
+        store<u8>(changetype<usize>(out), input.data.length);
+        memory.copy(changetype<usize>(out) + <usize>1, input.data.dataStart, <usize>input.data.length);;
+    }*/
 }
 
 const pos: Position = {
@@ -29,7 +53,8 @@ const pos: Position = {
         y: 1,
         z: 8
     },
-    moving: true
+    moving: true,
+    data: [1, 2, 3, 4, 5]
 };
 
 const vec: Vec3 = {
@@ -41,8 +66,18 @@ const vec: Vec3 = {
 const serialized = TBS.serialize(pos);
 const parsed = TBS.parse<Position>(serialized);
 
-console.log(Uint8Array.wrap(TBS.serialize(parsed)).join(" "));
-console.log(JSON.stringify(parsed));
+console.log(Uint8Array.wrap(serialized).join(" "));
+console.log(JSON.stringify(parsed));/*
+const arr: u8[] = [1,2,3,4,5,6]
+const buffer = new ArrayBuffer(7);
+store<u8>(changetype<usize>(buffer), arr.length);
+memory.copy(changetype<usize>(buffer) + <usize>1, arr.dataStart, <usize>arr.length);
+
+const parsed = new Array<u8>(6);
+memory.copy(changetype<usize>(parsed.buffer), changetype<usize>(buffer) + <usize>1, <usize>arr.length);
+
+console.log(Uint8Array.wrap(buffer).join(" "));
+console.log(parsed.join(" "))
 /*
 const keys = ["x", "y", "z"] //["valid", "x", "y", "z", "name"];
 

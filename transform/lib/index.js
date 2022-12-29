@@ -66,9 +66,27 @@ class TBSTransform extends BaseVisitor {
         let offset = 0;
         for (let i = 0; i < this.currentClass.keys.length; i++) {
             const key = this.currentClass.keys[i][0];
-            const type = this.currentClass.keys[i][2];
-            const offsetText = offset == 0 ? "" : ` + <usize>${offset}`;
+            let type = this.currentClass.keys[i][2];
+            let offsetText = offset == 0 ? "" : ` + <usize>${offset}`;
+            /*let arrayType = "";
+            if (type.toLowerCase().startsWith("array")) {
+                arrayType = type.slice(type.indexOf("<"), type.length - 1);
+                type = "array"
+            } else if (type.toLowerCase().endsWith("[]")) {
+                arrayType = type.slice(0, type.length - 2);
+                type = "array"
+            }*/
+            console.log(type);
             switch (type) {
+                case "Array<u8>": {
+                    offset++;
+                    offsetText = offset == 0 ? "" : ` + <usize>${offset}`;
+                    serializeFunc.push(`\tstore<u8>(changetype<usize>(out)${offset == 1 ? "" : ` + <usize>${offset - 1}`}${offsetDynamicSerialize}, input.${key}.length);\nmemory.copy(changetype<usize>(out)${offsetText}${offsetDynamicSerialize}, input.${key}.dataStart, input.${key}.length);`);
+                    deserializeFunc.push(`\tout.${key} = instantiate<${type}>(load<u8>(changetype<usize>(input)${offset == 1 ? "" : ` + <usize>${offset - 1}`}${offsetDynamicDeserialize}));\n\tmemory.copy(changetype<usize>(out.${key}.buffer), changetype<usize>(input)${offsetText}${offsetDynamicDeserialize}, load<u8>(changetype<usize>(input)${offset == 1 ? "" : ` + <usize>${offset - 1}`}${offsetDynamicDeserialize})));`);
+                    offsetDynamicSerialize += ` + <usize>input.${key}.length`;
+                    offsetDynamicDeserialize += ` + <usize>out.${key}.length`;
+                    break;
+                }
                 case "boolean": {
                     serializeFunc.push(`\tstore<u8>(changetype<usize>(out)${offsetText}${offsetDynamicSerialize}, input.${key});`);
                     deserializeFunc.push(`\tout.${key} = load<${type}>(changetype<usize>(input)${offsetText}${offsetDynamicDeserialize});`);
@@ -121,7 +139,7 @@ class TBSTransform extends BaseVisitor {
                 }
                 default: {
                     instantiateStmts += `result.${key} = changetype<${type}>(__new(offsetof<${type}>(), idof<${type}>())).__TBS_Instantiate();\n`;
-                    serializeFunc.push(`\tinput.${key}.__TBS_Serialize(input.${key}, changetype<ArrayBuffer>(changetype<usize>(out)${offsetText}${offsetDynamicSerialize}))`);
+                    serializeFunc.push(`\tinput.${key}.__TBS_Serialize(input.${key}, changetype<ArrayBuffer>(changetype<usize>(out)${offsetText}${offsetDynamicSerialize}));`);
                     deserializeFunc.push(`\tout.${key}.__TBS_Deserialize(changetype<ArrayBuffer>(changetype<usize>(input)${offsetText}${offsetDynamicDeserialize}), out.${key});`);
                     // @ts-ignore
                     offset += (_b = this.schemasList.find(v => v.name == type)) === null || _b === void 0 ? void 0 : _b.keyNames.length;

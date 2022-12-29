@@ -62,6 +62,7 @@ class Position {
   // UTF-16 support will land soon.
   pos!: Vec3;
   moving!: boolean;
+  data!: Array<u8>;
 }
 
 const pos: Position = {
@@ -72,7 +73,8 @@ const pos: Position = {
     y: 1,
     z: 8
   },
-  moving: true
+  moving: true,
+  data: [1, 2, 3, 4, 5]
 };
 
 const serialized = TBS.serialize<Position>(pos);
@@ -89,7 +91,7 @@ const parsed = TBS.parse<Position>(serialized);
 Only object ser/de is implemented at the moment. You will be able to ser/de all valid types which is (Object/Struct, String16, String8, Array<T>, bool, i8-64, f32, f64, u8-64).
 
 Serializing the data `{"name":"Markus Persson","id":9,"pos":{"x":3,"y":1,"z":8},"moving":true}` results in the TBS-encoded data,
-`14 77 97 114 107 117 115 32 80 101 114 115 115 111 110 9 3 1 8 1`
+`14 77 97 114 107 117 115 32 80 101 114 115 115 111 110 9 3 1 8 1 5 1 2 3 4 5`
 
 Here's a breakdown.
 
@@ -106,6 +108,10 @@ Here's a breakdown.
 `8`: pos.z value
 
 `1`: moving (true)
+
+`5`: data length (arr)
+
+`1-5`: data values
 ## Benchmark
 
 Didn't take benches recently, but ser/de takes:
