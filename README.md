@@ -6,6 +6,8 @@ Typed Binary Storage is a schema-centered data ser/de format optimized for perfo
 
 **TBS is in development. Expect breaking changes at a minimum along with many more features and updates for the next month or so when a stable version will be released**
 
+**You can read a little about it on the WIP GitBook https://jtanaka.gitbook.io/tbs/**
+
 ## Contents
 
 - [Purpose](#purpose)

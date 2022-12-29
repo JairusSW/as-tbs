@@ -1,7 +1,7 @@
 {
   "name": "as-tbs",
   "version": "0.1.0",
-  "description": "TBS",
+  "description": "Speedy, simplistic, and slim schema-centered ser/de",
   "types": "assembly/index.ts",
   "author": "Jairus Tanaka",
   "contributors": [],
