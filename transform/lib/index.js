@@ -81,11 +81,11 @@ class TBSTransform extends BaseVisitor {
                 offsetAdd += ` + <usize>input.${key}.length`;
             }
             else if (type == "Array<u16>" || type == "u16[]" || type == "Array<i16>" || type == "i16[]") {
-                offset += 2;
+                offset++;
                 offsetText = offset == 0 ? "" : ` + <usize>${offset}`;
-                serializeFunc.push(`\tstore<u8>(changetype<usize>(out)${offset == 1 ? "" : ` + <usize>${offset - 1}`}${offsetAdd}, input.${key}.length);\nmemory.copy(changetype<usize>(out)${offsetText}${offsetAdd}, input.${key}.dataStart, input.${key}.length);`);
-                deserializeFunc.push(`\tout.${key} = instantiate<${type}>(load<u8>(changetype<usize>(input)${offset == 1 ? "" : ` + <usize>${offset - 1}`}${offsetAdd.replaceAll("input", "out")}));\n\tmemory.copy(changetype<usize>(out.${key}.buffer), changetype<usize>(input)${offsetText}${offsetAdd.replaceAll("input", "out")}, load<u8>(changetype<usize>(input)${offset == 1 ? "" : ` + <usize>${offset - 1}`}${offsetAdd.replaceAll("input", "out")})));`);
-                offsetAdd += ` + <usize>input.${key}.length`;
+                serializeFunc.push(`\tstore<u8>(changetype<usize>(out)${offset == 1 ? "" : ` + <usize>${offset - 1}`}${offsetAdd}, input.${key}.length << 1);\nmemory.copy(changetype<usize>(out)${offsetText}${offsetAdd}, input.${key}.dataStart, input.${key}.length << 1);`);
+                deserializeFunc.push(`\tout.${key} = instantiate<${type}>(load<u8>(changetype<usize>(input)${offset == 1 ? "" : ` + <usize>${offset - 1}`}${offsetAdd.replaceAll("input", "out")}) >> 1);\n\tmemory.copy(changetype<usize>(out.${key}.buffer), changetype<usize>(input)${offsetText}${offsetAdd.replaceAll("input", "out")}, load<u8>(changetype<usize>(input)${offset == 1 ? "" : ` + <usize>${offset - 1}`}${offsetAdd.replaceAll("input", "out")})));`);
+                offsetAdd += ` + <usize>(input.${key}.length << 1)`;
             }
             else if (type == "boolean") {
                 serializeFunc.push(`\tstore<u8>(changetype<usize>(out)${offsetText}${offsetAdd}, input.${key});`);
