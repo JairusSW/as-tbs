@@ -15,7 +15,7 @@ class Position {
     id!: i8;
     pos!: Vec3;
     moving!: boolean;
-    data!: Array<u16>;
+    data!: Array<u32>;
 }
 
 const pos: Position = {

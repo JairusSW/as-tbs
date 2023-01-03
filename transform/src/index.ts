@@ -98,6 +98,12 @@ class TBSTransform extends BaseVisitor {
                 serializeFunc.push(`\tstore<u8>(changetype<usize>(out)${offset == 1 ? "" : ` + <usize>${offset - 1}`}${offsetAdd}, input.${key}.length << 1);\nmemory.copy(changetype<usize>(out)${offsetText}${offsetAdd}, input.${key}.dataStart, input.${key}.length << 1);`);
                 deserializeFunc.push(`\tout.${key} = instantiate<${type}>(load<u8>(changetype<usize>(input)${offset == 1 ? "" : ` + <usize>${offset - 1}`}${offsetAdd.replaceAll("input", "out")}) >> 1);\n\tmemory.copy(changetype<usize>(out.${key}.buffer), changetype<usize>(input)${offsetText}${offsetAdd.replaceAll("input", "out")}, load<u8>(changetype<usize>(input)${offset == 1 ? "" : ` + <usize>${offset - 1}`}${offsetAdd.replaceAll("input", "out")})));`)
                 offsetAdd += ` + <usize>(input.${key}.length << 1)`;
+            } else if (type == "Array<u32>" || type == "u32[]" || type == "Array<i32>" || type == "i32[]") {
+                offset++;
+                offsetText = offset == 0 ? "" : ` + <usize>${offset}`;
+                serializeFunc.push(`\tstore<u8>(changetype<usize>(out)${offset == 1 ? "" : ` + <usize>${offset - 1}`}${offsetAdd}, input.${key}.length << 2);\nmemory.copy(changetype<usize>(out)${offsetText}${offsetAdd}, input.${key}.dataStart, input.${key}.length << 2);`);
+                deserializeFunc.push(`\tout.${key} = instantiate<${type}>(load<u8>(changetype<usize>(input)${offset == 1 ? "" : ` + <usize>${offset - 1}`}${offsetAdd.replaceAll("input", "out")}) >> 2);\n\tmemory.copy(changetype<usize>(out.${key}.buffer), changetype<usize>(input)${offsetText}${offsetAdd.replaceAll("input", "out")}, load<u8>(changetype<usize>(input)${offset == 1 ? "" : ` + <usize>${offset - 1}`}${offsetAdd.replaceAll("input", "out")})));`)
+                offsetAdd += ` + <usize>(input.${key}.length << 2)`;
             } else if (type == "boolean") {
                 serializeFunc.push(`\tstore<u8>(changetype<usize>(out)${offsetText}${offsetAdd}, input.${key});`);
                 deserializeFunc.push(`\tout.${key} = load<${type}>(changetype<usize>(input)${offsetText}${offsetAdd.replaceAll("input", "out")});`);
@@ -190,7 +196,7 @@ function djb2Hash(str: string): number {
     let h = 5381;
     for (let p = 0; p < points.length; p++)
         // h = (h * 31 + c) | 0;
-        h = ((h << 5) - h + points[p]!.codePointAt(0)!) | 0;
+        h = ((h << 5) - h + points[p]!.codePointAt(80)!);
     return h;
 }
 
