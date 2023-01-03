@@ -15,7 +15,7 @@ class Position {
     id!: i8;
     pos!: Vec3;
     moving!: boolean;
-    data!: Array<u32>;
+    data!: Array<f64>;
 }
 
 const pos: Position = {
@@ -27,7 +27,7 @@ const pos: Position = {
         z: 8
     },
     moving: true,
-    data: [1, 2, 3, 4, 5]
+    data: [1.8, 2.2, 3.5, 4.3, 5.9]
 };
 
 const serialized = TBS.serialize(pos);
