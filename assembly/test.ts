@@ -20,7 +20,7 @@ class Position {
 }
 
 const pos: Position = {
-    name: "hi",
+    name: "p1",
     id: 9,
     pos: {
         x: 3,
@@ -39,6 +39,8 @@ const parsedPosition = TBS.parse<Position>(serializedPosition);
 
 console.log(Uint8Array.wrap(TBS.serialize(parsedPosition)).join(" "));
 
+console.log(`TBS is ${serializedPosition.byteLength} bytes long\nJSON is ${JSON.stringify(parsedPosition).length} bytes long\nTBS is ${JSON.stringify(parsedPosition).length - serializedPosition.byteLength} bytes smaller than JSON.`);
+
 /*console.log(`{
     name: "${parsedPosition.name}",
     id: ${parsedPosition.id},
@@ -52,6 +54,7 @@ console.log(Uint8Array.wrap(TBS.serialize(parsedPosition)).join(" "));
 console.log(JSON.stringify(parsedPosition));
 
 const serializedVec3 = TBS.serialize(pos.pos);
+
 console.log(Uint8Array.wrap(serializedVec3).join(" "));
 
 const parsedVec3 = TBS.parse<Vec3>(serializedVec3);
