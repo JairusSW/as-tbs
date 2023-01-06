@@ -7,11 +7,12 @@ class Vec3 {
     x!: i8;
     y!: i8;
     z!: i8;
+    str!: string8;
 }
 
 @serializable
 class Position {
-    name!: string;
+    name!: string8;
     id!: i8;
     pos!: Vec3;
     moving!: boolean;
@@ -19,20 +20,40 @@ class Position {
 }
 
 const pos: Position = {
-    name: "Markus Persson",
+    name: "hi",
     id: 9,
     pos: {
         x: 3,
         y: 1,
-        z: 8
+        z: 8,
+        str: "hello"
     },
     moving: true,
     data: [1.8, 2.2, 3.5, 4.3, 5.9]
 };
 
-const serialized = TBS.serialize(pos);
-console.log(Uint8Array.wrap(serialized).join(" "));
+const serializedPosition = TBS.serialize(pos);
+console.log(Uint8Array.wrap(serializedPosition).join(" "));
 
-const parsed = TBS.parse<Position>(serialized);
+const parsedPosition = TBS.parse<Position>(serializedPosition);
 
-console.log(JSON.stringify(parsed));
+console.log(Uint8Array.wrap(TBS.serialize(parsedPosition)).join(" "));
+
+/*console.log(`{
+    name: "${parsedPosition.name}",
+    id: ${parsedPosition.id},
+    pos: {
+        x: ${parsedPosition.pos.x},
+        y: ${parsedPosition.pos.y},
+        z: ${parsedPosition.pos.z},
+        str: "${parsedPosition.pos.str}"
+    }
+}`);*/
+console.log(JSON.stringify(parsedPosition));
+
+const serializedVec3 = TBS.serialize(pos.pos);
+console.log(Uint8Array.wrap(serializedVec3).join(" "));
+
+const parsedVec3 = TBS.parse<Vec3>(serializedVec3);
+
+console.log(JSON.stringify(parsedVec3));
