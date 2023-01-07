@@ -41,7 +41,7 @@ console.log(Uint8Array.wrap(TBS.serialize(parsedPosition)).join(" "));
 
 console.log(`TBS is ${serializedPosition.byteLength} bytes long\nJSON is ${JSON.stringify(parsedPosition).length} bytes long\nTBS is ${JSON.stringify(parsedPosition).length - serializedPosition.byteLength} bytes smaller than JSON.`);
 
-/*console.log(`{
+console.log(`{
     name: "${parsedPosition.name}",
     id: ${parsedPosition.id},
     pos: {
@@ -50,8 +50,9 @@ console.log(`TBS is ${serializedPosition.byteLength} bytes long\nJSON is ${JSON.
         z: ${parsedPosition.pos.z},
         str: "${parsedPosition.pos.str}"
     }
-}`);*/
-console.log(JSON.stringify(parsedPosition));
+}`);
+
+//console.log(JSON.stringify(parsedPosition));
 
 const serializedVec3 = TBS.serialize(pos.pos);
 
