@@ -2,7 +2,7 @@
 ![AssemblyScript](https://img.shields.io/badge/AssemblyScript-blue)
 ![WebAssembly](https://img.shields.io/badge/WebAssemby-purple)
 
-Typed Binary Storage is a schema-centered data ser/de format optimized for performance and minisceule size. It is designed to be compatible with most languages, but with WebAssembly in mind. By design, TBS is made so that little or no computation is required to ser/de any TBS-encoded data and so there is little overhead involved. Because of this, performance is extrodinary by default.
+Typed Binary Storage, also known as TBS is a schema-centered serialization format meant for the efficient and performant ser/de of data into a binary form. Designed for minimal if no overhead, TBS should be only memory loads and stores after the ser/de methods are generated. It also implements per-key ser/de without the need to parse first such as in JSON allowing fast mangling such as in Google's FlatBuffers.
 
 **TBS is in development. Expect breaking changes at a minimum along with many more features and updates for the next month or so when a stable version will be released**
 
@@ -13,12 +13,11 @@ Typed Binary Storage is a schema-centered data ser/de format optimized for perfo
 - [Purpose](#purpose)
 - [Setup](#setup)
 - [Usage](#usage)
-- [Specification](#specification)
+- [Design](#design)
 
 ## Purpose
 
-TBS was made to enable the performant transfer of basic data types across i/o with minimal overhead and memory usage. The format is inspired by [Apache Avro](https://avro.apache.org/).
-TODO: make this tl;dr
+TBS was made to enable the performant transfer of basic data types across i/o with minimal overhead and memory usage. The format is inspired by [Apache Avro](https://avro.apache.org/) and meant to provide both the ability to modify keys induvidually and support arbitrary ser/de. 
 
 ## Setup
 
@@ -61,7 +60,7 @@ class Position {
   name: string8;
   id: i8;
   // Will be encoded/decoded as a UTF-8 string.
-  // UTF-16 support will land soon.
+  // Type string is UTF-16 encoded
   pos!: Vec3;
   moving!: boolean;
   data!: Array<u8>;
@@ -88,43 +87,15 @@ const parsed = TBS.parse<Position>(serialized);
 // console.log(JSON.stringify(parsed));
 ```
 
-## Specification
+## Design
 
-Only object ser/de is implemented at the moment. You will be able to ser/de all valid types which is (Object/Struct, String16, String8, Array<T>, bool, i8-64, f32, f64, u8-64).
+Many serialization formats require the user to iterate over the binary data searching for tokens and then splitting where needed. TBS avoids this overhead by knowing where data segments start and end and length-prefixing data of a specific length. Because of this design, encoding and decoding is simply a series of `load` and `store` operations to and from a segment of memory.
 
-Serializing the data (JSON representation)
-`{"name":"Markus Persson","id":9,"pos":{"x":3,"y":1,"z":8},"moving":true,"data":[1,2,3,4,5]}` (91 byte length)
-results in the TBS-encoded data,
-`14 77 97 114 107 117 115 32 80 101 114 115 115 111 110 9 3 1 8 1 5 1 2 3 4 5` (26 bytes)
-
-Also, TBS is 3.5x smaller :)
-
-Here's a breakdown.
-
-`14`: length of string
-
-`77-110`: UTF-8 encoded string data
-
-`9`: id value
-
-`3`: pos.x value
-
-`1`: pos.y value
-
-`8`: pos.z value
-
-`1`: moving (true)
-
-`5`: data length (arr)
-
-`1-5`: data values
-
+Keys are 
 ## Benchmark
-
-Didn't take benches recently, but ser/de takes:
 
 `Serialize Vec3: 83m ops/s`
 and
 `Deserialize Vec3: 84m ops/s`
 
-Without allocating new objects, this averages about `300m ops/s`.
+Without allocating new objects, this averages about `300m ops/s` both ways.
