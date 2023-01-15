@@ -1,209 +1,76 @@
-// Please see: https://github.com/MaxGraey/as-string-sink/blob/main/assembly/index.ts
-
-const MIN_BUFFER_LEN = 2;
-const MIN_BUFFER_SIZE: u32 = MIN_BUFFER_LEN << 1;
-
-// @ts-ignore: decorator
-@inline function nextPowerOf2(n: u32): u32 {
-    return 1 << 32 - clz(n - 1);
+// @ts-ignore
+@inline export function unsafeCharCodeAt(data: string, pos: i32): i32 {
+    return load<u16>(changetype<usize>(data) + ((<usize>pos) << 1));
 }
 
-export class ByteSink {
-    protected buffer: ArrayBuffer;
-    protected offset: u32 = 0;
-
-    static withCapacity(capacity: i32): ByteSink {
-        return new ByteSink(new ArrayBuffer(0), capacity);
+export function djb2(data: string): i32 {
+    let hash = 5381;
+    for (let i = 0; i < data.length; i++) {
+        hash = ((hash << 5) - hash + unsafeCharCodeAt(data, i)) & 0xFFFFFFFF;
     }
+    return hash;
+}
 
-    constructor(initial: ArrayBuffer = new ArrayBuffer(0), capacity: i32 = MIN_BUFFER_LEN) {
-        var size = <u32>initial.byteLength << 1;
-        this.buffer = changetype<ArrayBuffer>(__new(
-            max<u32>(size, max<u32>(MIN_BUFFER_SIZE, <u32>capacity << 1)),
-            idof<ArrayBuffer>())
-        );
-        if (size) {
-            memory.copy(
-                changetype<usize>(this.buffer),
-                changetype<usize>(initial),
-                size
-            );
-            this.offset += size;
-        }
-    }
+/** Reads an unsigned integer from memory. */
+export function readUint<T>(offet: usize = 0): u32 {
+    var pos = offet;
+    var val = <u32>load<T>(pos);
+    offet = pos + sizeof<T>();
+    return val;
+}
 
-    get length(): i32 {
-        return this.offset >> 1;
-    }
+/** Reads an unsigned 64-bit integer from memory. */
+export function readUint64(offset: usize = 0): u64 {
+    var pos = offset;
+    var val = load<u64>(pos);
+    offset = pos + 8;
+    return val;
+}
 
-    get capacity(): i32 {
-        return this.buffer.byteLength >>> 1;
-    }
+/** Reads a LEB128-encoded unsigned integer from memory. */
+export function readVaruint(size: u32, offset: usize = 0): u32 {
+  var val: u32 = 0;
+  var shl: u32 = 0;
+  var byt: u32;
+  var pos = offset;
+  do {
+    byt = load<u8>(pos++);
+    val |= (byt & 0x7F) << shl;
+    if (!(byt & 0x80)) break;
+    shl += 7;
+  } while (true);
+  offset = pos;
+  return val;
+}
 
-    write<T>(source: T, start: i32 = 0, end: i32 = i32.MAX_VALUE): void {
-        if (source instanceof ArrayBuffer) this.writeBuffer(<ArrayBuffer>source, start, end);
-        else if (source instanceof String) this.writeString(<string>source, start, end);
-        else if (source instanceof Uint8Array) this.writeUint8Array(<Uint8Array>source, start, end);
-        else if (source instanceof Array<u8>) this.writeArray(<Array<u8>>source, start, end);
-    }
 
-    writeUint8Array(src: Uint8Array, start: i32 = 0, end: i32 = i32.MAX_VALUE): void {
-        let len = src.byteLength as u32;
+/** Reads a LEB128-encoded signed integer from memory. */
+export function readVarint(size: u32, offset: usize = 0): i32 {
+  var val: u32 = 0;
+  var shl: u32 = 0;
+  var byt: u32;
+  var pos = offset;
+  do {
+    byt = load<u8>(pos++);
+    val |= (byt & 0x7F) << shl;
+    shl += 7;
+  } while (byt & 0x80);
+  offset = pos;
+  return select<u32>(val | (~0 << shl), val, shl < size && (byt & 0x40) != 0);
+}
 
-        if (start != 0 || end != i32.MAX_VALUE) {
-            let from: i32;
-            from = min<i32>(max(start, 0), len);
-            end = min<i32>(max(end, 0), len);
-            start = min<i32>(from, end);
-            end = max<i32>(from, end);
-            len = end - start;
-        }
 
-        if (!len) return;
-
-        this.ensureCapacity(len);
-
-        let offset = this.offset;
-
-        memory.copy(
-            changetype<usize>(this.buffer) + <usize>offset,
-            src.dataStart + <usize>start,
-            <usize>len,
-        );
-        this.offset += len;
-    }
-
-    writeArray(src: u8[], start: i32 = 0, end: i32 = i32.MAX_VALUE): void {
-        let len = src.length as u32;
-
-        if (start != 0 || end != i32.MAX_VALUE) {
-            let from: i32;
-            from = min<i32>(max(start, 0), len);
-            end = min<i32>(max(end, 0), len);
-            start = min<i32>(from, end);
-            end = max<i32>(from, end);
-            len = end - start;
-        }
-
-        if (!len) return;
-
-        this.ensureCapacity(len);
-
-        let offset = this.offset;
-
-        memory.copy(
-            changetype<usize>(this.buffer) + <usize>offset,
-            src.dataStart + <usize>start,
-            <usize>len,
-        );
-        this.offset += len;
-    }
-
-    writeBuffer(src: ArrayBuffer, start: i32 = 0, end: i32 = i32.MAX_VALUE): void {
-        let len = src.byteLength as u32;
-
-        if (start != 0 || end != i32.MAX_VALUE) {
-            let from: i32;
-            from = min<i32>(max(start, 0), len);
-            end = min<i32>(max(end, 0), len);
-            start = min<i32>(from, end);
-            end = max<i32>(from, end);
-            len = end - start;
-        }
-
-        if (!len) return;
-
-        this.ensureCapacity(len);
-
-        let offset = this.offset;
-
-        memory.copy(
-            changetype<usize>(this.buffer) + <usize>offset,
-            changetype<usize>(src) + <usize>start,
-            <usize>len,
-        );
-        this.offset += len;
-    }
-
-    writeString(src: string, start: i32 = 0, end: i32 = i32.MAX_VALUE): void {
-        let buffer = String.UTF8.encode(src.slice(start, end));
-        this.writeBuffer(buffer);
-    }
-
-    writeLn(src: string = "", start: i32 = 0, end: i32 = i32.MAX_VALUE): void {
-        this.writeString(src + "\r\n", start, end);
-    }
-
-    writeNumber<T extends number>(value: T): void {
-        let offset = this.offset;
-        let buffer = this.buffer;
-        store<T>(changetype<usize>(buffer) + <usize>offset, value);
-        this.offset = offset + sizeof<T>();
-    }
-
-    reserve(capacity: i32, clear: bool = false): void {
-        if (clear) this.offset = 0;
-        this.buffer = changetype<ArrayBuffer>(__renew(
-            changetype<usize>(this.buffer),
-            max<u32>(this.offset, max<u32>(MIN_BUFFER_SIZE, <u32>capacity << 1))
-        ));
-    }
-
-    shrink(): void {
-        this.buffer = changetype<ArrayBuffer>(__renew(
-            changetype<usize>(this.buffer),
-            max<u32>(this.offset, MIN_BUFFER_SIZE)
-        ));
-    }
-
-    clear(): void {
-        this.reserve(0, true);
-    }
-
-    toString(): string {
-        let size = this.offset;
-        if (!size) return "";
-        return String.UTF8.decode(this.buffer);
-    }
-
-    toArrayBuffer(): ArrayBuffer {
-        return this.buffer.slice();
-    }
-
-    toStaticArray(): StaticArray<u8> {
-        let length = this.buffer.byteLength
-        let result = new StaticArray<u8>(length);
-        memory.copy(
-            changetype<usize>(result),
-            changetype<usize>(this.buffer),
-            <usize>length,
-        );
-        return result;
-    }
-
-    @inline protected ensureCapacity(deltaBytes: u32): void {
-        let buffer = this.buffer;
-        let newSize = this.offset + deltaBytes;
-        if (newSize > <u32>buffer.byteLength) {
-            this.buffer = changetype<ArrayBuffer>(__renew(
-                changetype<usize>(buffer),
-                nextPowerOf2(newSize)
-            ));
-        }
-    }
-
-    get byteLength(): i32 {
-        return this.offset;
-    }
-
-    read(index: i32): u8 {
-        let buffer = this.buffer;
-        let byteLength = buffer.byteLength;
-        assert(index < byteLength);
-        return load<u8>(changetype<usize>(buffer) + <usize>index);
-    }
-
-    get dataStart(): usize {
-        return changetype<usize>(this.buffer);
-    }
+/** Reads a LEB128-encoded signed 64-bit integer from memory. */
+export function readVarint64(offset: usize = 0): i64 {
+  var val: u64 = 0;
+  var shl: u64 = 0;
+  var byt: u64;
+  var pos = offset;
+  do {
+    byt = load<u8>(pos++);
+    val |= (byt & 0x7F) << shl;
+    shl += 7;
+  } while (byt & 0x80);
+  offset = pos;
+  return select<u64>(val | (~0 << shl), val, shl < 64 && (byt & 0x40) != 0);
 }
