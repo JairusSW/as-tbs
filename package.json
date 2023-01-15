@@ -20,20 +20,20 @@
     "@as-pect/cli": "^8.0.1",
     "@as-tral/cli": "^2.0.0",
     "@ason/assembly": "^0.11.1",
-    "@assemblyscript/loader": "^0.25.0",
+    "@assemblyscript/loader": "^0.26.2",
     "@assemblyscript/wasi-shim": "^0.1.0",
     "as-bignum": "^0.2.23",
-    "assemblyscript": "^0.25.0",
+    "assemblyscript": "^0.26.2",
     "assemblyscript-prettier": "^1.0.6",
-    "json-as": "^0.5.15",
-    "prettier": "^2.8.1",
+    "json-as": "^0.5.16",
+    "prettier": "^2.8.2",
     "typescript": "^4.9.4"
   },
   "dependencies": {
     "as-option": "^0.0.2",
     "as-string-sink": "^0.5.0",
     "as-variant": "^0.4.0",
-    "byte-parse-as": "^0.0.1",
+    "byte-parse-as": "^0.1.0",
     "visitor-as": "^0.11.4"
   },
   "repository": {
