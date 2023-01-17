@@ -82,7 +82,10 @@ class TBSTransform extends BaseVisitor {
         let offset = 0;
         let offsetStruct = "";
         for (const key of this.currentClass.keys) {
-            const type = this.currentClass.types.at(this.currentClass.keys.indexOf(key));
+            const baseType = this.currentClass.types.at(this.currentClass.keys.indexOf(key));
+            const type = baseType.includes("<") ? baseType.slice(0, baseType.indexOf("<") || baseType.length) : baseType;
+            const typeDeep = baseType.slice((baseType.indexOf("<") + 1) || 0, baseType.length - 1);
+            console.log(typeDeep)
             switch (type) {
                 case "i8" || "u8" || "i16" || "u16" || "i32" || "u32": {
                     serializeStmts.push(`store<${type}>(changetype<usize>(out) + <usize>${offset}, input.${key});`);
@@ -90,6 +93,19 @@ class TBSTransform extends BaseVisitor {
                     if (type.endsWith("8")) offset++;
                     else if (type.endsWith("16")) offset += 2;
                     else if (type.endsWith("32")) offset += 4;
+                    break;
+                }
+                case "StaticArray": {
+                    //switch (typeDeep) {
+                        //case "i8" || "u8" || "i16" || "u16" || "i32" || "u32": {
+                            serializeStmts.push(`store<u16>(changetype<usize>(out) + <usize>${offset}, input.${key}.length);`);
+                            serializeStmts.push(`memory.copy(changetype<usize>(out) + <usize>${offset + 2}, changetype<usize>(input.${key}), input.${key}.length);`);
+                            deserializeStmts.push(`out.${key} = instantiate<${baseType}>(load<u8>(changetype<usize>(input) + <usize>${offset}));`)
+                            deserializeStmts.push(`memory.copy(changetype<usize>(out.${key}), changetype<usize>(input) + <usize>${offset + 2}, load<u16>(changetype<usize>(input) + <usize>${offset}));`);
+                            offset += 2;
+                       // }
+                    //}
+                    break;
                 }
             }
         }
