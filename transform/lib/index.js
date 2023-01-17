@@ -65,7 +65,7 @@ class TBSTransform extends BaseVisitor {
         const serializeStmts = [];
         const deserializeStmts = [];
         let offset = 0;
-        let offsetStruct = "";
+        let offsetDyn = "";
         for (const key of this.currentClass.keys) {
             const baseType = this.currentClass.types.at(this.currentClass.keys.indexOf(key));
             const type = baseType.includes("<") ? baseType.slice(0, baseType.indexOf("<") || baseType.length) : baseType;
@@ -73,8 +73,8 @@ class TBSTransform extends BaseVisitor {
             console.log(typeDeep);
             switch (type) {
                 case "i8" || "u8" || "i16" || "u16" || "i32" || "u32": {
-                    serializeStmts.push(`store<${type}>(changetype<usize>(out) + <usize>${offset}, input.${key});`);
-                    deserializeStmts.push(`out.${key} = load<${type}>(changetype<usize>(input) + <usize>${offset});`);
+                    serializeStmts.push(`store<${type}>(changetype<usize>(out) + <usize>${offset}${offsetDyn}, input.${key});`);
+                    deserializeStmts.push(`out.${key} = load<${type}>(changetype<usize>(input) + <usize>${offset}${offsetDyn});`);
                     if (type.endsWith("8"))
                         offset++;
                     else if (type.endsWith("16"))
@@ -86,19 +86,20 @@ class TBSTransform extends BaseVisitor {
                 case "StaticArray": {
                     //switch (typeDeep) {
                     //case "i8" || "u8" || "i16" || "u16" || "i32" || "u32": {
-                    serializeStmts.push(`store<u16>(changetype<usize>(out) + <usize>${offset}, input.${key}.length);`);
-                    serializeStmts.push(`memory.copy(changetype<usize>(out) + <usize>${offset + 2}, changetype<usize>(input.${key}), input.${key}.length);`);
-                    deserializeStmts.push(`out.${key} = instantiate<${baseType}>(load<u8>(changetype<usize>(input) + <usize>${offset}));`);
-                    deserializeStmts.push(`memory.copy(changetype<usize>(out.${key}), changetype<usize>(input) + <usize>${offset + 2}, load<u16>(changetype<usize>(input) + <usize>${offset}));`);
+                    serializeStmts.push(`store<u16>(changetype<usize>(out) + <usize>${offset}${offsetDyn}, input.${key}.length);`);
+                    serializeStmts.push(`memory.copy(changetype<usize>(out) + <usize>${offset + 2}${offsetDyn}, changetype<usize>(input.${key}), input.${key}.length);`);
+                    deserializeStmts.push(`out.${key} = instantiate<${baseType}>(load<u8>(changetype<usize>(input) + <usize>${offset}${offsetDyn}));`);
+                    deserializeStmts.push(`memory.copy(changetype<usize>(out.${key}), changetype<usize>(input) + <usize>${offset + 2}${offsetDyn}, load<u16>(changetype<usize>(input) + <usize>${offset}${offsetDyn}));`);
                     offset += 2;
-                    // }
-                    //}
+                    offsetDyn += ` + <usize>dynamic.${key}.length`;
                     break;
+                    //}
+                    //}
                 }
             }
         }
-        this.currentClass.serializeStmts = serializeStmts.map(v => v.replaceAll(" + <usize>0", ""));
-        this.currentClass.deserializeStmts = deserializeStmts.map(v => v.replaceAll(" + <usize>0", ""));
+        this.currentClass.serializeStmts = serializeStmts.map(v => v.replaceAll(" + <usize>0", "").replaceAll(" + <usize>dynamic.", " + <usize>input."));
+        this.currentClass.deserializeStmts = deserializeStmts.map(v => v.replaceAll(" + <usize>0", "").replaceAll(" + <usize>dynamic.", " + <usize>out."));
         console.log(sortedKeys, sortedTypes, sortedHashes);
         console.log(this.currentClass.serializeStmts);
         console.log(this.currentClass.deserializeStmts);

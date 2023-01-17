@@ -35,6 +35,8 @@ class Vec3 {
     y: i8;
     z: i8;
     foo!: StaticArray<u8>;
+    bar!: StaticArray<u8>;
+    //bar: string;
 }
 /*
 //@serializable
@@ -64,7 +66,8 @@ const vec: Vec3 = {
     x: 3,
     y: 1,
     z: 8,
-    foo: new StaticArray(5)
+    foo: new StaticArray(5),
+    bar: new StaticArray(3)
 }
 vec.foo[0] = 1;
 vec.foo[1] = 2;
@@ -72,7 +75,11 @@ vec.foo[2] = 3;
 vec.foo[3] = 4;
 vec.foo[4] = 5;
 
-const serializedVec3 = new ArrayBuffer(10);
+vec.bar[0] = 10;
+vec.bar[1] = 11;
+vec.bar[2] = 12;
+
+const serializedVec3 = new ArrayBuffer(13);
 TBS.serializeTo(vec, serializedVec3);
 
 console.log(`Serialized Vec3: ${Uint8Array.wrap(serializedVec3).join(" ")}`);
