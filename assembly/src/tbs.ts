@@ -3,15 +3,42 @@ import { Variant } from "as-variant/assembly";
 export type string8 = string;
 export namespace TBS {
     export enum Types {
-        ArrayID,
-        String8ID,
-        String16ID,
-        StructID,
-        i32ID,
-        i64ID,
-        f32ID,
-        f64ID,
-        BoolID
+        u8 = 0b0001,
+        i8 = 0b1001,
+        u16 = 0b0010,
+        i16 = 0b1010,
+        u32 = 0b0011,
+        i32 = 0b1011,
+        u64 = 0b0100,
+        i64 = 0b1100,
+        f32 = 0b1101,
+        f64 = 0b0110,
+        StringU8 = 0b0111,
+        StringU16 = 0b1000,
+        Array = 0b1110,
+        Struct = 0b1111
+    }
+    export enum ComplexTypes {
+        // Array Types
+        // For integers, we include a sign bit because we want to support arbitrary ser/de.
+        ArrayU8 = 0b00010001,
+        // 0001
+        ArrayI8 = 0b00011001,
+        // 1001
+        ArrayU16 = 0b00010010,
+        // 0010
+        ArrayI16 = 0b00010010,
+        // 1010
+        ArrayU32 = 0b00010011,
+        // 0011
+        ArrayI32 = 0b00011011,
+        // 1011
+        ArrayU64 = 0b00010100,
+        // 0100
+        ArrayI64 = 0b00011100,
+        // 1100
+        ArrayBool = 0b00011111
+        // 1111
     }
     // @ts-ignore
     @inline export function serialize<T>(data: T): ArrayBuffer {
@@ -70,7 +97,7 @@ export namespace TBS {
     @inline export function serializeTo<T>(data: T, out: ArrayBuffer, offset: usize = 0): void {
         if (isString<T>()) {
             // UTF-16 String
-            store<u8>(changetype<usize>(out) + offset, Types.String16ID);
+            store<u8>(changetype<usize>(out) + offset, Types.StringU8);
             memory.copy(changetype<usize>(out) + offset + <usize>1, changetype<usize>(data), (<string>data).length << 1);
         } else if (isBoolean<T>()) {
             store<bool>(changetype<usize>(out) + offset, <bool>data);
@@ -88,7 +115,7 @@ export namespace TBS {
             store<f64>(changetype<usize>(out) + offset, <f64>data);
             // @ts-ignore
         } else if (data instanceof Array) {
-            store<u8>(changetype<usize>(out) + offset, Types.ArrayID);
+            store<u8>(changetype<usize>(out) + offset, Types.Array);
             // @ts-ignore
             if (!(isManaged<valueof<T>>() || isReference<valueof<T>>())) {
                 // Store type information but ignore for bool or null
@@ -119,7 +146,7 @@ export namespace TBS {
         } else if (isManaged<T>() || isReference<T>()) {
             if (idof<T>() == idof<Variant>()) {
                 // @ts-ignore
-                return parseArbitrary(data, Types.String16ID);
+                return parseArbitrary(data, Types.StringU16);
             }
             // @ts-ignore
             const inst: nonnull<T> = changetype<nonnull<T>>(__new(offsetof<nonnull<T>>(), idof<nonnull<T>>()));
@@ -156,19 +183,19 @@ export namespace TBS {
             return load<boolean>(changetype<usize>(data));
         } else if (isInteger<T>() || isFloat<T>()) {
             switch (load<u8>(changetype<usize>(data))) {
-                case Types.i32ID: {
+                case Types.i32: {
                     // @ts-ignore
                     return load<i32>(changetype<usize>(data) + offset + <usize>2);
                 }
-                case Types.i64ID: {
+                case Types.i64: {
                     // @ts-ignore
                     return load<i64>(changetype<usize>(data) + offset + <usize>2);
                 }
-                case Types.f32ID: {
+                case Types.f32: {
                     // @ts-ignore
                     return load<f32>(changetype<usize>(data) + offset + <usize>2);
                 }
-                case Types.f64ID: {
+                case Types.f64: {
                     // @ts-ignore
                     return load<f64>(changetype<usize>(data) + offset + <usize>2);
                 }
@@ -184,25 +211,43 @@ export namespace TBS {
 // @ts-ignore
 function parseArbitrary(data: ArrayBuffer, type: i32): Variant {
     switch (type) {
-        case TBS.Types.String8ID: {
+        case TBS.Types.StringU8: {
             // @ts-ignore
             return Variant.from<string>(TBS.parse<string>(data));
-        } case TBS.Types.String16ID: {
+        } case TBS.Types.StringU16: {
             // @ts-ignore
             return Variant.from<string>(TBS.parse<string>(data));
-        } case TBS.Types.i32ID: {
+        } case TBS.Types.u8: {
+            // @ts-ignore
+            return Variant.from<u8>(TBS.parse<u8>(data));
+        } case TBS.Types.i8: {
+            // @ts-ignore
+            return Variant.from<i8>(TBS.parse<i8>(data));
+        } case TBS.Types.u16: {
+            // @ts-ignore
+            return Variant.from<u16>(TBS.parse<u16>(data));
+        } case TBS.Types.i16: {
+            // @ts-ignore
+            return Variant.from<i16>(TBS.parse<i16>(data));
+        } case TBS.Types.u32: {
+            // @ts-ignore
+            return Variant.from<u32>(TBS.parse<u32>(data));
+        } case TBS.Types.i32: {
             // @ts-ignore
             return Variant.from<i32>(TBS.parse<i32>(data));
-        } case TBS.Types.i64ID: {
+        } case TBS.Types.u64: {
+            // @ts-ignore
+            return Variant.from<u64>(TBS.parse<u64>(data));
+        } case TBS.Types.i64: {
             // @ts-ignore
             return Variant.from<i64>(TBS.parse<i64>(data));
-        } case TBS.Types.f32ID: {
+        } case TBS.Types.f32: {
             // @ts-ignore
             return Variant.from<f32>(TBS.parse<f32>(data));
-        } case TBS.Types.f64ID: {
+        } case TBS.Types.f64: {
             // @ts-ignore
             return Variant.from<f64>(TBS.parse<f64>(data));
-        } case TBS.Types.ArrayID: {
+        } case TBS.Types.Array: {
             const arrayType = load<i8>(changetype<usize>(data) + <usize>1);
             if (arrayType < 0) {
                 // @ts-ignore
@@ -221,11 +266,11 @@ function parseArbitrary(data: ArrayBuffer, type: i32): Variant {
 
 // @ts-ignore
 @inline function typeToID<T>(data: T): u8 {
-    if (isString<T>()) return TBS.Types.String16ID;
-    else if (data instanceof i32) return TBS.Types.i32ID;
-    else if (data instanceof i64) return TBS.Types.i64ID;
-    else if (data instanceof f32) return TBS.Types.f32ID;
-    else if (data instanceof f64) return TBS.Types.f64ID;
-    else if (data instanceof Array) return TBS.Types.ArrayID;
+    if (isString<T>()) return TBS.Types.StringU16;
+    else if (data instanceof i32) return TBS.Types.i32;
+    else if (data instanceof i64) return TBS.Types.i64;
+    else if (data instanceof f32) return TBS.Types.f32;
+    else if (data instanceof f64) return TBS.Types.f64;
+    else if (data instanceof Array) return TBS.Types.Array;
     else return 0;
 }

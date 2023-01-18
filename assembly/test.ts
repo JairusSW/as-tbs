@@ -69,6 +69,7 @@ const vec: Vec3 = {
     foo: new StaticArray(5),
     bar: new StaticArray(3)
 }
+
 vec.foo[0] = 1;
 vec.foo[1] = 2;
 vec.foo[2] = 3;
@@ -95,3 +96,15 @@ console.log(`Deserialized String: ${TBS.parse<string>(TBS.serialize("hello"))}`)
 console.log(Uint8Array.wrap(TBS.serialize("hello")).join(" "));
 const parsedArb = TBS.parse<Variant>(TBS.serialize("hello"));
 console.log("Parsed: " + parsedArb.get<string>());
+TBS.parse
+/*
+const arrayID: u8 = TBS.Types.ArrayID
+const u8ID: u8 = TBS.Types.
+const type: u8 = 0b00010010;
+let num: u8 = 0b00000000;
+console.log("arrayID: " + arrayID.toString(2));
+console.log("u8ID: " + u8ID.toString(2));
+//num = ((num | 0b00000010) >> 4) | 0b00000001;
+console.log(type.toString(2));
+console.log((type >> 4).toString(2));
+console.log((type & 0x0F).toString(2));*/
