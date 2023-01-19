@@ -59,6 +59,8 @@ const pos: Position = {
     moving: true,
     data: [1.8, 2.2, 3.5, 4.3, 5.9]
 };*/
+
+// @ts-ignore
 console.log(isDefined(__TBS_Serialize).toString());
 
 // @ts-ignore
@@ -96,7 +98,11 @@ console.log(`Deserialized String: ${TBS.parse<string>(TBS.serialize("hello"))}`)
 console.log(Uint8Array.wrap(TBS.serialize("hello")).join(" "));
 const parsedArb = TBS.parse<Variant>(TBS.serialize("hello"));
 console.log("Parsed: " + parsedArb.get<string>());
-TBS.parse
+
+const u8Arb: u8[] = [1, 2, 3];
+const ser = TBS.serialize(u8Arb);
+console.log(Uint8Array.wrap(ser).join(" "));
+console.log(TBS.parse<Variant>(ser).get<u8[]>().join(" "))
 /*
 const arrayID: u8 = TBS.Types.ArrayID
 const u8ID: u8 = TBS.Types.
