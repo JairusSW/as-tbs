@@ -20,31 +20,37 @@ export namespace TBS {
     export enum ComplexTypes {
         // Array Types
         // For integers, we include a sign bit because we want to support arbitrary ser/de.
-        ArrayU8 = 15,
-        ArrayI8 = 16,
-        ArrayU16 = 17,
-        ArrayI16 = 18,
-        ArrayU32 = 19,
-        ArrayI32 = 20,
-        ArrayU64 = 21,
-        ArrayI64 = 22,
-        ArrayBool = 23,
-        ArrayStringU8 = 24,
-        ArrayStringU16 = 25,
+        ArrayU8 = 14,
+        ArrayI8 = 15,
+        ArrayU16 = 16,
+        ArrayI16 = 17,
+        ArrayU32 = 18,
+        ArrayI32 = 19,
+        ArrayU64 = 20,
+        ArrayI64 = 21,
+        ArrayF32 = 22,
+        ArrayF64 = 23,
+        ArrayBool = 24,
+        ArrayStringU8 = 25,
+        ArrayStringU16 = 26,
+        ArrayStruct = 27,
 
         // Dimensional Arrays
-        ArrayDim = 26,
-        ArrayDimU8 = 27,
-        ArrayDimI8 = 28,
-        ArrayDimU16 = 29,
-        ArrayDimI16 = 30,
-        ArrayDimU32 = 31,
-        ArrayDimI32 = 32,
-        ArrayDimU64 = 33,
-        ArrayDimI64 = 34,
-        ArrayDimBool = 35,
-        ArrayDimStringU8 = 36,
-        ArrayDimStringU16 = 37
+        ArrayDim = 28,
+        ArrayDimU8 = 29,
+        ArrayDimI8 = 30,
+        ArrayDimU16 = 31,
+        ArrayDimI16 = 32,
+        ArrayDimU32 = 33,
+        ArrayDimI32 = 34,
+        ArrayDimU64 = 35,
+        ArrayDimI64 = 36,
+        ArrayDimF32 = 37,
+        ArrayDimF64 = 38,
+        ArrayDimBool = 39,
+        ArrayDimStringU8 = 40,
+        ArrayDimStringU16 = 41,
+        ArrayDimStruct = 42
     }
     // @ts-ignore
     @inline export function serialize<T>(data: T): ArrayBuffer {
@@ -57,6 +63,22 @@ export namespace TBS {
             const out = new ArrayBuffer(1);
             serializeTo(data, out);
             return out;
+        } else if (data instanceof i8) {
+            const out = new ArrayBuffer(1);
+            serializeTo(data, out);
+            return out;
+        } else if (data instanceof u8) {
+            const out = new ArrayBuffer(1);
+            serializeTo(data, out);
+            return out;
+        } else if (data instanceof i16) {
+            const out = new ArrayBuffer(2);
+            serializeTo(data, out);
+            return out;
+        } else if (data instanceof u16) {
+            const out = new ArrayBuffer(2);
+            serializeTo(data, out);
+            return out;
         } else if (data instanceof i32) {
             const out = new ArrayBuffer(4);
             serializeTo(data, out);
@@ -65,19 +87,19 @@ export namespace TBS {
             const out = new ArrayBuffer(4);
             serializeTo(data, out);
             return out;
-        } else if (data instanceof i64) {
+        } else if (data instanceof i64 || data instanceof I64) {
             const out = new ArrayBuffer(8);
             serializeTo(data, out);
             return out;
-        } else if (data instanceof u64) {
+        } else if (data instanceof u64 || data instanceof U64) {
             const out = new ArrayBuffer(8);
             serializeTo(data, out);
             return out;
-        } else if (data instanceof f32) {
+        } else if (data instanceof f32 || data instanceof F32) {
             const out = new ArrayBuffer(4);
             serializeTo(data, out);
             return out;
-        } else if (data instanceof f64) {
+        } else if (data instanceof f64 || data instanceof F64) {
             const out = new ArrayBuffer(8);
             serializeTo(data, out);
             return out;
@@ -115,9 +137,17 @@ export namespace TBS {
             memory.copy(changetype<usize>(out) + offset + <usize>1, changetype<usize>(data), (<string>data).length << 1);
         } else if (isBoolean<T>()) {
             store<bool>(changetype<usize>(out) + offset, <bool>data);
-        } else if (data instanceof i32) {
-            store<i32>(changetype<usize>(out) + offset, <i32>data);
+        } else if (data instanceof u8) {
+            store<u8>(changetype<usize>(out) + offset, <i32>data);
+        } else if (data instanceof i8) {
+            store<i8>(changetype<usize>(out) + offset, <u32>data);
+        } else if (data instanceof u16) {
+            store<u16>(changetype<usize>(out) + offset, <i32>data);
+        } else if (data instanceof i16) {
+            store<i16>(changetype<usize>(out) + offset, <u32>data);
         } else if (data instanceof u32) {
+            store<u32>(changetype<usize>(out) + offset, <i32>data);
+        } else if (data instanceof i32) {
             store<i32>(changetype<usize>(out) + offset, <u32>data);
         } else if (data instanceof i64) {
             store<i64>(changetype<usize>(out) + offset, <i64>data);
@@ -147,7 +177,7 @@ export namespace TBS {
             }
             // @ts-ignore
             const deepType: valueof<T> = (isManaged<valueof<T>>() || isReference<valueof<T>>()) ? changetype<valueof<T>>(0) : 0;
-            if (deepType instanceof u8) {
+            if (deepType instanceof u8 || deepType instanceof i8) {
                 store<u8>(changetype<usize>(out) + offset, ComplexTypes.ArrayU8);
                 // @ts-ignore
                 memory.copy(changetype<usize>(out) + <usize>1 + offset, changetype<usize>(data.buffer), data.length);
@@ -188,6 +218,7 @@ export namespace TBS {
                 // @ts-ignore
                 return out;
             }
+            return unreachable();
         } else if (isManaged<T>() || isReference<T>()) {
             if (idof<T>() == idof<Variant>()) {
                 // @ts-ignore
@@ -227,30 +258,60 @@ export namespace TBS {
             // @ts-ignore
             return load<boolean>(changetype<usize>(data));
         } else if (isInteger<T>() || isFloat<T>()) {
-            switch (load<u8>(changetype<usize>(data))) {
-                case Types.i32: {
-                    // @ts-ignore
-                    return load<i32>(changetype<usize>(data) + offset + <usize>2);
-                }
-                case Types.i64: {
-                    // @ts-ignore
-                    return load<i64>(changetype<usize>(data) + offset + <usize>2);
-                }
-                case Types.f32: {
-                    // @ts-ignore
-                    return load<f32>(changetype<usize>(data) + offset + <usize>2);
-                }
-                case Types.f64: {
-                    // @ts-ignore
-                    return load<f64>(changetype<usize>(data) + offset + <usize>2);
-                }
+            // @ts-ignore
+            const type: T = 0;
+            if (type instanceof u8) {
+                // @ts-ignore
+                return load<u8>(changetype<usize>(data) + offset + <usize>1);
+            } else if (type instanceof i8) {
+                // @ts-ignore
+                return load<i8>(changetype<usize>(data) + offset + <usize>1);
+            } else if (type instanceof u8) {
+                // @ts-ignore
+                return load<u8>(changetype<usize>(data) + offset + <usize>1);
+            } else if (type instanceof u16) {
+                // @ts-ignore
+                return load<u16>(changetype<usize>(data) + offset + <usize>1);
+            } else if (type instanceof i16) {
+                // @ts-ignore
+                return load<i16>(changetype<usize>(data) + offset + <usize>1);
+            } else if (type instanceof u32) {
+                // @ts-ignore
+                return load<u32>(changetype<usize>(data) + offset + <usize>1);
+            } else if (type instanceof i32) {
+                // @ts-ignore
+                return load<i32>(changetype<usize>(data) + offset + <usize>1);
+            } else if (type instanceof f32) {
+                // @ts-ignore
+                return load<f32>(changetype<usize>(data) + offset + <usize>1);
+            } else if (type instanceof u64) {
+                // @ts-ignore
+                return load<u64>(changetype<usize>(data) + offset + <usize>1);
+            } else if (type instanceof i64) {
+                // @ts-ignore
+                return load<i64>(changetype<usize>(data) + offset + <usize>1);
+            } else if (type instanceof f64) {
+                // @ts-ignore
+                return load<f64>(changetype<usize>(data) + offset + <usize>1);
             }
         } else if (isArray<T>()) {
             // @ts-ignore
             const deepType: valueof<T> = (isManaged<valueof<T>>() || isReference<valueof<T>>()) ? changetype<valueof<T>>(0) : 0;
-            if (deepType instanceof u8) {
+            if (deepType instanceof u8 || deepType instanceof i8) {
                 // @ts-ignore
-                memory.copy(changetype<usize>(out.buffer), changetype<usize>(data) + offset + <usize>1, data.byteLength);
+                memory.copy(changetype<usize>(out.buffer), changetype<usize>(data) + offset + <usize>1, data.byteLength - 1);
+                return;
+            } else if (deepType instanceof u16 || deepType instanceof i16) {
+                // @ts-ignore
+                memory.copy(changetype<usize>(out.buffer), changetype<usize>(data) + offset + <usize>1, (data.byteLength - 1) << 1);
+                return;
+            } else if (deepType instanceof u32 || deepType instanceof i32 || deepType instanceof f32) {
+                // @ts-ignore
+                memory.copy(changetype<usize>(out.buffer), changetype<usize>(data) + offset + <usize>1, (data.byteLength - 1) << 2);
+                return;
+            } else if (deepType instanceof u64 || deepType instanceof i64 || deepType instanceof f64) {
+                // @ts-ignore
+                memory.copy(changetype<usize>(out.buffer), changetype<usize>(data) + offset + <usize>1, (data.byteLength - 1) << 3);
                 return;
             }
             // @ts-ignore
@@ -270,44 +331,48 @@ function parseArbitrary(data: ArrayBuffer, type: i32): Variant {
         } case TBS.Types.StringU16: {
             // @ts-ignore
             return Variant.from<string>(TBS.parse<string>(data));
-        } case TBS.Types.u8: {
-            // @ts-ignore
-            return Variant.from<u8>(TBS.parse<u8>(data));
-        } case TBS.Types.i8: {
-            // @ts-ignore
-            return Variant.from<i8>(TBS.parse<i8>(data));
-        } case TBS.Types.u16: {
-            // @ts-ignore
-            return Variant.from<u16>(TBS.parse<u16>(data));
-        } case TBS.Types.i16: {
-            // @ts-ignore
-            return Variant.from<i16>(TBS.parse<i16>(data));
-        } case TBS.Types.u32: {
-            // @ts-ignore
-            return Variant.from<u32>(TBS.parse<u32>(data));
-        } case TBS.Types.i32: {
-            // @ts-ignore
-            return Variant.from<i32>(TBS.parse<i32>(data));
-        } case TBS.Types.u64: {
-            // @ts-ignore
-            return Variant.from<u64>(TBS.parse<u64>(data));
-        } case TBS.Types.i64: {
-            // @ts-ignore
-            return Variant.from<i64>(TBS.parse<i64>(data));
-        } case TBS.Types.f32: {
-            // @ts-ignore
-            return Variant.from<f32>(TBS.parse<f32>(data));
-        } case TBS.Types.f64: {
-            // @ts-ignore
-            return Variant.from<f64>(TBS.parse<f64>(data));
         } case TBS.ComplexTypes.ArrayU8: {
             // @ts-ignore
             return Variant.from<u8[]>(TBS.parse<u8[]>(data));
-        }
-        default: {
-            return unreachable();
+        } case TBS.ComplexTypes.ArrayI8: {
+            // @ts-ignore
+            return Variant.from<i8[]>(TBS.parse<i8[]>(data));
+        } case TBS.ComplexTypes.ArrayU16: {
+            // @ts-ignore
+            return Variant.from<u16[]>(TBS.parse<u16[]>(data));
+        } case TBS.ComplexTypes.ArrayI16: {
+            // @ts-ignore
+            return Variant.from<i16[]>(TBS.parse<i16[]>(data));
+        } case TBS.ComplexTypes.ArrayU32: {
+            // @ts-ignore
+            return Variant.from<u32[]>(TBS.parse<u32[]>(data));
+        } case TBS.ComplexTypes.ArrayI32: {
+            // @ts-ignore
+            return Variant.from<i32[]>(TBS.parse<i32[]>(data));
+        } case TBS.ComplexTypes.ArrayU64: {
+            // @ts-ignore
+            return Variant.from<u64[]>(TBS.parse<u64[]>(data));
+        } case TBS.ComplexTypes.ArrayI64: {
+            // @ts-ignore
+            return Variant.from<i64[]>(TBS.parse<i64[]>(data));
+        } case TBS.ComplexTypes.ArrayF32: {
+            // @ts-ignore
+            return Variant.from<f32[]>(TBS.parse<f32[]>(data));
+        } case TBS.ComplexTypes.ArrayF64: {
+            // @ts-ignore
+            return Variant.from<f64[]>(TBS.parse<f64[]>(data));
         }
     }
+    if (data.byteLength == 1) {
+        return Variant.from<i8>(load<i8>(changetype<usize>(data)));
+    } else if (data.byteLength == 2) {
+        return Variant.from<i16>(load<i16>(changetype<usize>(data)));
+    } else if (data.byteLength == 4) {
+        return Variant.from<i32>(load<i32>(changetype<usize>(data)));
+    } else if (data.byteLength == 8) {
+        return Variant.from<i64>(load<i64>(changetype<usize>(data)));
+    }
+    return unreachable();
 }
 /*
 // @ts-ignore

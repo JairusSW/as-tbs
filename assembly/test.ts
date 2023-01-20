@@ -100,9 +100,13 @@ const parsedArb = TBS.parse<Variant>(TBS.serialize("hello"));
 console.log("Parsed: " + parsedArb.get<string>());
 
 const u8Arb: u8[] = [1, 2, 3];
-const ser = TBS.serialize(u8Arb);
-console.log(Uint8Array.wrap(ser).join(" "));
-console.log(TBS.parse<Variant>(ser).get<u8[]>().join(" "))
+console.log(Uint8Array.wrap(TBS.serialize(u8Arb)).join(" "));
+console.log(TBS.parse<Variant>(TBS.serialize(u8Arb)).get<u8[]>().join(" "));
+console.log(Uint8Array.wrap(TBS.serialize(<i8>-13)).join(" "));
+const parsedNum = TBS.parse<Variant>(TBS.serialize(<u8>231));
+if (parsedNum.is<i8>()) {
+    console.log((<u8>parsedNum.get<i8>()).toString());
+}
 /*
 const arrayID: u8 = TBS.Types.ArrayID
 const u8ID: u8 = TBS.Types.
