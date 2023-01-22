@@ -1,33 +1,9 @@
-import { djb2 } from "./src/util";
-import { TBS } from "./src/tbs";
+import { djb2, getArrayDepth} from "./src/util";
+import { TBS, serializeDeepArray } from "./src/tbs";
 import { JSON } from "json-as";
 import { unsafeCharCodeAt } from "json-as/assembly/src/util";
 import { Variant } from "as-variant/assembly";
-/*
-@global function __TBS_Serialize<T>(input: T, out: ArrayBuffer): ArrayBuffer {
-    if (input instanceof Vec3) {
-        store<i8>(changetype<usize>(out), input.x);
-        store<i8>(changetype<usize>(out) + <usize>1, input.y);
-        store<i8>(changetype<usize>(out) + <usize>2, input.z);
-        store<u16>(changetype<usize>(out) + <usize>3, input.foo.length);
-        memory.copy(changetype<usize>(out) + <usize>5, changetype<usize>(input.foo), input.foo.length);
-        return out;
-    }
-    return unreachable();
-}
 
-@global function __TBS_Deserialize<T>(input: ArrayBuffer, out: T): T {
-    if (out instanceof Vec3) {
-        out.x = load<i8>(changetype<usize>(input));
-        out.y = load<i8>(changetype<usize>(input) + <usize>1);
-        out.z = load<i8>(changetype<usize>(input) + <usize>2);
-        out.foo = instantiate<StaticArray<u8>>(load<u8>(changetype<usize>(input) + <usize>3));
-        memory.copy(changetype<usize>(out.foo), changetype<usize>(input) + <usize>5, load<u16>(changetype<usize>(input) + <usize>3));
-        return out;
-    }
-    return unreachable();
-}
-*/
 @tbs
 @json
 class Vec3 {
@@ -94,27 +70,21 @@ console.log(JSON.stringify(deserializedVec3));
 
 console.log(`Serialized String: ${Uint8Array.wrap(TBS.serialize("hello")).join(" ")}`);
 console.log(`Deserialized String: ${TBS.parse<string>(TBS.serialize("hello"))}`);
-
+/*
 console.log(Uint8Array.wrap(TBS.serialize("hello")).join(" "));
 const parsedArb = TBS.parse<Variant>(TBS.serialize("hello"));
 console.log("Parsed: " + parsedArb.get<string>());
+*/
+const u8Arb: u8[][][] = [[[1, 2, 3],[4, 5, 6],[7, 8, 9]]];
+const buf = new ArrayBuffer(30);
+TBS.serializeTo(u8Arb, buf);
+console.log(Uint8Array.wrap(buf).join(" "));
+console.log(u8Arb.length.toString());
 
-const u8Arb: u8[] = [1, 2, 3];
-console.log(Uint8Array.wrap(TBS.serialize(u8Arb)).join(" "));
+/*
 console.log(TBS.parse<Variant>(TBS.serialize(u8Arb)).get<u8[]>().join(" "));
 console.log(Uint8Array.wrap(TBS.serialize(<i8>-13)).join(" "));
 const parsedNum = TBS.parse<Variant>(TBS.serialize(<u8>231));
 if (parsedNum.is<i8>()) {
     console.log((<u8>parsedNum.get<i8>()).toString());
-}
-/*
-const arrayID: u8 = TBS.Types.ArrayID
-const u8ID: u8 = TBS.Types.
-const type: u8 = 0b00010010;
-let num: u8 = 0b00000000;
-console.log("arrayID: " + arrayID.toString(2));
-console.log("u8ID: " + u8ID.toString(2));
-//num = ((num | 0b00000010) >> 4) | 0b00000001;
-console.log(type.toString(2));
-console.log((type >> 4).toString(2));
-console.log((type & 0x0F).toString(2));*/
+}*/

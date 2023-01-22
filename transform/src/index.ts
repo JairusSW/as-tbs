@@ -9,7 +9,7 @@ import { getName, toString } from "visitor-as/dist/utils.js";
 import { BaseVisitor, SimpleParser } from "visitor-as/dist/index.js";
 import { Transform } from "assemblyscript/dist/transform.js";
 import { RangeTransform } from "visitor-as/dist/transformRange.js";
-import { FunctionDeclaration, NamespaceDeclaration } from "types:assemblyscript/src/ast";
+import { FunctionDeclaration, IndexSignatureNode, NamespaceDeclaration } from "types:assemblyscript/src/ast";
 
 class SchemaData {
     public keys: any[] = [];

@@ -1,4 +1,6 @@
 import { Variant } from "as-variant/assembly";
+import { getArrayDepth } from "./util";
+import { JSON } from "json-as";
 
 export type string8 = string;
 export namespace TBS {
@@ -63,35 +65,19 @@ export namespace TBS {
             const out = new ArrayBuffer(1);
             serializeTo(data, out);
             return out;
-        } else if (data instanceof i8) {
+        } else if (data instanceof i8 || data instanceof u8) {
             const out = new ArrayBuffer(1);
             serializeTo(data, out);
             return out;
-        } else if (data instanceof u8) {
-            const out = new ArrayBuffer(1);
-            serializeTo(data, out);
-            return out;
-        } else if (data instanceof i16) {
+        } else if (data instanceof i16 || data instanceof u16) {
             const out = new ArrayBuffer(2);
             serializeTo(data, out);
             return out;
-        } else if (data instanceof u16) {
-            const out = new ArrayBuffer(2);
-            serializeTo(data, out);
-            return out;
-        } else if (data instanceof i32) {
+        } else if (data instanceof i32 || data instanceof u32) {
             const out = new ArrayBuffer(4);
             serializeTo(data, out);
             return out;
-        } else if (data instanceof u32) {
-            const out = new ArrayBuffer(4);
-            serializeTo(data, out);
-            return out;
-        } else if (data instanceof i64 || data instanceof I64) {
-            const out = new ArrayBuffer(8);
-            serializeTo(data, out);
-            return out;
-        } else if (data instanceof u64 || data instanceof U64) {
+        } else if (data instanceof i64 || data instanceof I64 || data instanceof u64 || data instanceof U64) {
             const out = new ArrayBuffer(8);
             serializeTo(data, out);
             return out;
@@ -106,7 +92,7 @@ export namespace TBS {
             // @ts-ignore
         } else if (isArray<T>()) {
             // @ts-ignore
-            const out = new ArrayBuffer(data.length + 1);
+            const out = isArray<valueof<T>>() ? new ArrayBuffer(data.length + 2) : new ArrayBuffer(data.length + 1);
             // @ts-ignore
             serializeTo(data, out);
             // @ts-ignore
@@ -138,62 +124,31 @@ export namespace TBS {
         } else if (isBoolean<T>()) {
             store<bool>(changetype<usize>(out) + offset, <bool>data);
         } else if (data instanceof u8) {
-            store<u8>(changetype<usize>(out) + offset, <i32>data);
+            store<u8>(changetype<usize>(out) + offset, <u8>data);
         } else if (data instanceof i8) {
-            store<i8>(changetype<usize>(out) + offset, <u32>data);
+            store<i8>(changetype<usize>(out) + offset, <i8>data);
         } else if (data instanceof u16) {
-            store<u16>(changetype<usize>(out) + offset, <i32>data);
+            store<u16>(changetype<usize>(out) + offset, <u16>data);
         } else if (data instanceof i16) {
-            store<i16>(changetype<usize>(out) + offset, <u32>data);
+            store<i16>(changetype<usize>(out) + offset, <i16>data);
         } else if (data instanceof u32) {
-            store<u32>(changetype<usize>(out) + offset, <i32>data);
+            store<u32>(changetype<usize>(out) + offset, <u32>data);
         } else if (data instanceof i32) {
-            store<i32>(changetype<usize>(out) + offset, <u32>data);
-        } else if (data instanceof i64) {
-            store<i64>(changetype<usize>(out) + offset, <i64>data);
+            store<i32>(changetype<usize>(out) + offset, <i32>data);
         } else if (data instanceof u64) {
             store<u64>(changetype<usize>(out) + offset, <u64>data);
+        } else if (data instanceof i64) {
+            store<i64>(changetype<usize>(out) + offset, <i64>data);
         } else if (data instanceof f32) {
             store<f32>(changetype<usize>(out) + offset, <f32>data);
         } else if (data instanceof f64) {
             store<f64>(changetype<usize>(out) + offset, <f64>data);
             // @ts-ignore
         } else if (data instanceof Array) {
-            //store<u8>(changetype<usize>(out) + offset, Types.Array);
             // @ts-ignore
-            if (isString<valueof<T>>()) {
-                store<u8>(changetype<usize>(out) + offset, ComplexTypes.ArrayStringU8);
-                memory.copy(changetype<usize>(out) + <usize>1 + offset, changetype<usize>(data), data.length);
-                // @ts-ignore
-            } else if (isArray<valueof<T>>()) {
-                // @ts-ignore
-                const type = changetype<valueof<valueof<T>>>();
-                if (type instanceof u8) {
-                    store<u8>(changetype<usize>(out) + offset, ComplexTypes.ArrayDimU8);
-                    store<u8>(changetype<usize>(out) + <usize>1 + offset, 2);
-                    memory.copy(changetype<usize>(out) + <usize>2 + offset, changetype<usize>(data), data.length);
-                }
-                // TODO: Get depth of array
+            if (isArray<valueof<T>>()) {
+                serializeDeepArray(data, out);
             }
-            // @ts-ignore
-            const deepType: valueof<T> = (isManaged<valueof<T>>() || isReference<valueof<T>>()) ? changetype<valueof<T>>(0) : 0;
-            if (deepType instanceof u8 || deepType instanceof i8) {
-                store<u8>(changetype<usize>(out) + offset, ComplexTypes.ArrayU8);
-                // @ts-ignore
-                memory.copy(changetype<usize>(out) + <usize>1 + offset, changetype<usize>(data.buffer), data.length);
-            }
-            /*// @ts-ignore
-            if (!(isManaged<valueof<T>>() || isReference<valueof<T>>())) {
-                // Store type information but ignore for bool or null
-                if (typeToID(data)) {
-                    store<u8>(changetype<usize>(out) + offset + <usize>2, typeToID(data));
-                    // Store the length
-                    store<u16>(changetype<usize>(out) + offset + <usize>3, data.length);
-                    // It is a primitive type
-                    // @ts-ignore
-                    memory.copy(changetype<usize>(out) + offset + <usize>5, data.buffer, data.length);
-                }
-            }*/
             // @ts-ignore
         } else if (isDefined(__TBS_Serialize)) {
             // @ts-ignore
@@ -374,14 +329,26 @@ function parseArbitrary(data: ArrayBuffer, type: i32): Variant {
     }
     return unreachable();
 }
-/*
+
 // @ts-ignore
-@inline function typeToID<T>(data: T): u8 {
-    if (isString<T>()) return TBS.Types.StringU16;
-    else if (data instanceof i32) return TBS.Types.i32;
-    else if (data instanceof i64) return TBS.Types.i64;
-    else if (data instanceof f32) return TBS.Types.f32;
-    else if (data instanceof f64) return TBS.Types.f64;
-    else if (data instanceof Array) return TBS.Types.Array;
-    else return 0;
-}*/
+@inline export function serializeDeepArray<T extends Array>(data: T, out: ArrayBuffer, depth: usize = 1, offset: i32 = 0): void {
+    if (isArray<valueof<valueof<T>>>()) {
+        serializeDeepArray<valueof<T>>(data[0], out, ++depth);
+    } else {
+        let leng = data.length << 1;
+        const type: valueof<valueof<T>> = (isManaged<valueof<valueof<T>>>() || isReference<valueof<valueof<T>>>()) ? changetype<valueof<valueof<T>>>(0) : 0;
+        // @ts-ignore
+        if (type instanceof u8 || type instanceof i8) {
+            store<u8>(changetype<usize>(out), TBS.ComplexTypes.ArrayDimU8);
+            store<u8>(changetype<usize>(out) + <usize>1 + offset, depth);
+            for (let i = 0; i < data.length; i++) {
+                const arr = unchecked(data[i]);
+                leng += arr.length;
+                store<u16>(changetype<usize>(out) + <usize>2 + offset, arr.length);
+                memory.copy(changetype<usize>(out) + <usize>4 + offset, arr.dataStart, arr.length);
+                offset += arr.byteLength + 1;
+            }
+            console.log(leng.toString())
+        }
+    }
+}
