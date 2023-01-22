@@ -74,3 +74,19 @@ export function readVarint64(offset: usize = 0): i64 {
   offset = pos;
   return select<u64>(val | (~0 << shl), val, shl < 64 && (byt & 0x40) != 0);
 }
+
+/**
+ * A terrible function which finds the depth of a certain array.
+ * Suffers no overhead besides function calling and a if/else.
+ * @returns depth of array
+ */
+export function getArrayDepth<T>(depth: i32 = 1): i32 {
+  // @ts-ignore
+  if (isArray<valueof<T>>()) {
+    depth++;
+    // @ts-ignore
+    return getArrayDepth<valueof<T>>(depth);
+  } else {
+    return depth;
+  }
+}
