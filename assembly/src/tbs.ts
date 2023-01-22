@@ -92,7 +92,7 @@ export namespace TBS {
             // @ts-ignore
         } else if (isArray<T>()) {
             // @ts-ignore
-            const out = isArray<valueof<T>>() ? new ArrayBuffer(data.length + 2) : new ArrayBuffer(data.length + 1);
+            const out = isArray<valueof<T>>() ? new ArrayBuffer(byteLength(data)) : new ArrayBuffer(data.length + 1);
             // @ts-ignore
             serializeTo(data, out);
             // @ts-ignore
@@ -275,6 +275,14 @@ export namespace TBS {
             __TBS_Deserialize(data, out);
         }
     }
+    @inline export function byteLength<T>(data: T): i32 {
+        if (data instanceof Array) {
+            arrByteLen = 0;
+            arrayByteLength(data);
+            return arrByteLen;
+        }
+        return unreachable();
+    }
 }
 
 // @ts-ignore
@@ -331,24 +339,38 @@ function parseArbitrary(data: ArrayBuffer, type: i32): Variant {
 }
 
 // @ts-ignore
-@inline export function serializeDeepArray<T extends Array>(data: T, out: ArrayBuffer, depth: usize = 1, offset: i32 = 0): void {
+@inline export function serializeDeepArray<T extends Array<any>>(data: T, out: ArrayBuffer, depth: usize = 1, offset: i32 = 0): void {
     if (isArray<valueof<valueof<T>>>()) {
         serializeDeepArray<valueof<T>>(data[0], out, ++depth);
     } else {
-        let leng = data.length << 1;
         const type: valueof<valueof<T>> = (isManaged<valueof<valueof<T>>>() || isReference<valueof<valueof<T>>>()) ? changetype<valueof<valueof<T>>>(0) : 0;
         // @ts-ignore
         if (type instanceof u8 || type instanceof i8) {
             store<u8>(changetype<usize>(out), TBS.ComplexTypes.ArrayDimU8);
             store<u8>(changetype<usize>(out) + <usize>1 + offset, depth);
+            store<u16>(changetype<usize>(out) + <usize>2 + offset, TBS.byteLength(data))
             for (let i = 0; i < data.length; i++) {
                 const arr = unchecked(data[i]);
-                leng += arr.length;
-                store<u16>(changetype<usize>(out) + <usize>2 + offset, arr.length);
-                memory.copy(changetype<usize>(out) + <usize>4 + offset, arr.dataStart, arr.length);
-                offset += arr.byteLength + 1;
+                store<u16>(changetype<usize>(out) + <usize>4 + offset, arr.length);
+                memory.copy(changetype<usize>(out) + <usize>6 + offset, arr.dataStart, arr.length);
+                offset += arr.byteLength + 2;
             }
-            console.log(leng.toString())
+        }
+    }
+}
+
+// @ts-ignore
+@lazy let arrByteLen = 0;
+// @ts-ignore
+@inline export function arrayByteLength<T extends Array<any>>(data: T): void {
+    // @ts-ignore
+    if (isArray<valueof<valueof<T>>>()) {
+        arrayByteLength<valueof<T>>(data[0]);
+    } else {
+        arrByteLen = (data.length + 2) << 1;
+        for (let i = 0; i < data.length; ++i) {
+            let child = load<usize>(data.dataStart + (i << alignof<T>()));
+            arrByteLen += child == 0 ? 0 : load<i32>(child, offsetof<T>("length_"));
         }
     }
 }

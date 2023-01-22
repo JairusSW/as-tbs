@@ -1,5 +1,5 @@
 import { djb2, getArrayDepth} from "./src/util";
-import { TBS, serializeDeepArray } from "./src/tbs";
+import { TBS, arrayByteLength, serializeDeepArray } from "./src/tbs";
 import { JSON } from "json-as";
 import { unsafeCharCodeAt } from "json-as/assembly/src/util";
 import { Variant } from "as-variant/assembly";
@@ -75,9 +75,10 @@ console.log(Uint8Array.wrap(TBS.serialize("hello")).join(" "));
 const parsedArb = TBS.parse<Variant>(TBS.serialize("hello"));
 console.log("Parsed: " + parsedArb.get<string>());
 */
-const u8Arb: u8[][][] = [[[1, 2, 3],[4, 5, 6],[7, 8, 9]]];
-const buf = new ArrayBuffer(30);
+const u8Arb: u8[][] = [[1, 2, 3],[4, 5, 6],[7, 8, 9]];
+const buf = new ArrayBuffer(TBS.byteLength(u8Arb));
 TBS.serializeTo(u8Arb, buf);
+console.log("byteLength: " + TBS.byteLength(u8Arb).toString())
 console.log(Uint8Array.wrap(buf).join(" "));
 console.log(u8Arb.length.toString());
 
