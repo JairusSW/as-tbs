@@ -7,11 +7,9 @@ import { Variant } from "as-variant/assembly";
 @tbs
 @json
 class Vec3 {
-    x: i8;
-    y: i8;
-    z: i8;
-    foo!: StaticArray<u8>;
-    bar!: StaticArray<u8>;
+    x: f32;
+    y: f32;
+    z: f32;
     //bar: string;
 }
 /*
@@ -44,10 +42,10 @@ const vec: Vec3 = {
     x: 3,
     y: 1,
     z: 8,
-    foo: new StaticArray(5),
-    bar: new StaticArray(3)
+    //foo: new StaticArray(5),
+    //bar: new StaticArray(3)
 }
-
+/*
 vec.foo[0] = 1;
 vec.foo[1] = 2;
 vec.foo[2] = 3;
@@ -57,7 +55,7 @@ vec.foo[4] = 5;
 vec.bar[0] = 10;
 vec.bar[1] = 11;
 vec.bar[2] = 12;
-
+*/
 const serializedVec3 = new ArrayBuffer(13);
 TBS.serializeTo(vec, serializedVec3);
 
@@ -82,6 +80,9 @@ console.log("byteLength: " + TBS.byteLength(u8Arb).toString())
 console.log(Uint8Array.wrap(buf).join(" "));
 console.log(u8Arb.length.toString());
 
+console.log(Uint8Array.wrap(String.UTF16.encode("Jairus Tanaka")).join(" "))
+console.log(Uint8Array.wrap(String.UTF8.encode("Jairus Tanaka")).join(" "))
+console.log(Uint8Array.wrap(String.UTF8.encode("pos")).join(" "))
 /*
 console.log(TBS.parse<Variant>(TBS.serialize(u8Arb)).get<u8[]>().join(" "));
 console.log(Uint8Array.wrap(TBS.serialize(<i8>-13)).join(" "));

@@ -81,46 +81,40 @@ class TBSTransform extends BaseVisitor {
         const deserializeStmts: string[] = [];
         let offset = 0;
         let offsetDyn = "";
-        for (const key of this.currentClass.keys) {
-            const baseType = this.currentClass.types.at(this.currentClass.keys.indexOf(key));
-            const type = baseType.includes("<") ? baseType.slice(0, baseType.indexOf("<") || baseType.length) : baseType;
-            const typeDeep = baseType.slice((baseType.indexOf("<") + 1) || 0, baseType.length - 1);
-            console.log(typeDeep)
-            switch (type) {
-                case "i8" || "u8" || "i16" || "u16" || "i32" || "u32": {
-                    serializeStmts.push(`store<${type}>(changetype<usize>(out) + <usize>${offset}${offsetDyn}, input.${key});`);
-                    deserializeStmts.push(`out.${key} = load<${type}>(changetype<usize>(input) + <usize>${offset}${offsetDyn});`);
-                    if (type.endsWith("8")) offset++;
-                    else if (type.endsWith("16")) offset += 2;
-                    else if (type.endsWith("32")) offset += 4;
-                    break;
-                }
-                case "StaticArray": {
-                    //switch (typeDeep) {
-                    //case "i8" || "u8" || "i16" || "u16" || "i32" || "u32": {
-                    serializeStmts.push(`store<u16>(changetype<usize>(out) + <usize>${offset}${offsetDyn}, input.${key}.length);`);
-                    serializeStmts.push(`memory.copy(changetype<usize>(out) + <usize>${offset + 2}${offsetDyn}, changetype<usize>(input.${key}), input.${key}.length);`);
-                    deserializeStmts.push(`out.${key} = instantiate<${baseType}>(load<u8>(changetype<usize>(input) + <usize>${offset}${offsetDyn}));`)
-                    deserializeStmts.push(`memory.copy(changetype<usize>(out.${key}), changetype<usize>(input) + <usize>${offset + 2}${offsetDyn}, load<u16>(changetype<usize>(input) + <usize>${offset}${offsetDyn}));`);
-                    offset += 2;
-                    offsetDyn += ` + <usize>dynamic.${key}.length`;
-                    break;
-                    //}
-                    //}
-                }
-                case "string": {
-                    //switch (typeDeep) {
-                    //case "i8" || "u8" || "i16" || "u16" || "i32" || "u32": {
-                    serializeStmts.push(`store<u16>(changetype<usize>(out) + <usize>${offset}${offsetDyn}, input.${key}.length);`);
-                    serializeStmts.push(`memory.copy(changetype<usize>(out) + <usize>${offset + 2}${offsetDyn}, changetype<usize>(input.${key}), input.${key}.length);`);
-                    deserializeStmts.push(`out.${key} = instantiate<${baseType}>(load<u8>(changetype<usize>(input) + <usize>${offset}${offsetDyn}));`)
-                    deserializeStmts.push(`memory.copy(changetype<usize>(out.${key}), changetype<usize>(input) + <usize>${offset + 2}${offsetDyn}, load<u16>(changetype<usize>(input) + <usize>${offset}${offsetDyn}));`);
-                    offset += 2;
-                    offsetDyn += ` + <usize>dynamic.${key}.length`;
-                    break;
-                    //}
-                    //}
-                }
+        for (let i = 0; i < sortedKeys.length; i++) {
+            const key = sortedKeys[i]!;
+            const baseType = sortedTypes[i]!;
+            const type = baseType;
+            console.log("type: " + type);
+            if (["i8", "u8", "i16", "u16", "i32", "u32", "f32", "i64", "I64", "u64", "U64", "f64"].includes(type)) {
+                serializeStmts.push(`store<${type}>(changetype<usize>(out) + <usize>${offset}${offsetDyn}, input.${key});`);
+                deserializeStmts.push(`out.${key} = load<${type}>(changetype<usize>(input) + <usize>${offset}${offsetDyn});`);
+                if (type.endsWith("8")) offset++;
+                else if (type.endsWith("16")) offset += 2;
+                else if (type.endsWith("32")) offset += 4;
+                else if (type.endsWith("64")) offset += 8;
+            } else if (type == "StaticArray") {
+                //switch (typeDeep) {
+                //case "i8" || "u8" || "i16" || "u16" || "i32" || "u32": {
+                serializeStmts.push(`store<u16>(changetype<usize>(out) + <usize>${offset}${offsetDyn}, input.${key}.length);`);
+                serializeStmts.push(`memory.copy(changetype<usize>(out) + <usize>${offset + 2}${offsetDyn}, changetype<usize>(input.${key}), input.${key}.length);`);
+                deserializeStmts.push(`out.${key} = instantiate<${baseType}>(load<u8>(changetype<usize>(input) + <usize>${offset}${offsetDyn}));`)
+                deserializeStmts.push(`memory.copy(changetype<usize>(out.${key}), changetype<usize>(input) + <usize>${offset + 2}${offsetDyn}, load<u16>(changetype<usize>(input) + <usize>${offset}${offsetDyn}));`);
+                offset += 2;
+                offsetDyn += ` + <usize>dynamic.${key}.length`;
+                //}
+                //}
+            } else if (type == "string") {
+                //switch (typeDeep) {
+                //case "i8" || "u8" || "i16" || "u16" || "i32" || "u32": {
+                serializeStmts.push(`store<u16>(changetype<usize>(out) + <usize>${offset}${offsetDyn}, input.${key}.length);`);
+                serializeStmts.push(`memory.copy(changetype<usize>(out) + <usize>${offset + 2}${offsetDyn}, changetype<usize>(input.${key}), input.${key}.length);`);
+                deserializeStmts.push(`out.${key} = instantiate<${baseType}>(load<u8>(changetype<usize>(input) + <usize>${offset}${offsetDyn}));`)
+                deserializeStmts.push(`memory.copy(changetype<usize>(out.${key}), changetype<usize>(input) + <usize>${offset + 2}${offsetDyn}, load<u16>(changetype<usize>(input) + <usize>${offset}${offsetDyn}));`);
+                offset += 2;
+                offsetDyn += ` + <usize>dynamic.${key}.length`;
+                //}
+                //}
             }
         }
 

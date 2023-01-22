@@ -91,11 +91,109 @@ const parsed = TBS.parse<Position>(serialized);
 
 Many serialization formats require the user to iterate over the binary data searching for tokens and then splitting where needed. TBS avoids this overhead by knowing where data segments start and end and length-prefixing data of a specific length. Because of this design, encoding and decoding is simply a series of `load` and `store` operations to and from a segment of memory.
 
-Keys are 
-## Benchmark
+## Format
 
-`Serialize Vec3: 83m ops/s`
-and
-`Deserialize Vec3: 84m ops/s`
+#### Structures
 
-Without allocating new objects, this averages about `300m ops/s` both ways.
+Structures are a data type where the data types and keys are known beforehand. Every key and its corrosponding type is in the schema and only the values are serialized and deserialized resulting in a compact form. This should be the default way that data is transferred if possible because of its performance and size benefits.
+
+**Example of Vec3 ser/de**
+
+Data structure
+```
+{
+  x: i8 = 1
+  y: i8 = 2
+  z: i8 = 3
+}
+```
+
+Serializes to:
+
+`[1, 2, 3]`
+
+Now, when we have more complex structures such as strings and arrays, we make sure to length-prefix our arrays.
+
+Data structure
+```
+{
+  pos: i8[] = [1, 2, 3]
+}
+```
+
+Serializes to:
+
+`[3, 0, 1, 2, 3]`
+
+Notice the leading `3` is the length of the array containing two bytes of data with a maximum length of 65,536. Formatted in big-endian.
+
+With strings, it is the same, but the user can choose between UTF8 and UTF16 strings.
+
+Data structure
+```
+{
+  name: string8 = "Jairus Tanaka"
+  // UTF-8 string
+}
+```
+
+Serializes to:
+
+`[13, 0, 74, 97, 105, 114, 117, 115, 32, 84, 97, 110, 97, 107, 97]`
+
+For complex data structures, it looks like so
+
+```
+{
+  name: "pos",
+  id: 3,
+  pos: {
+    x: i8 = 1
+    y: i8 = 2
+    z: i8 = 3
+  }
+}
+```
+
+Serializes to:
+
+```
+[112, 111, 115, 3, 1, 2, 3]
+"p    o    s"  id  x  y  z
+```
+
+#### Arbitrary values
+
+TBS supports the following types
+
+- String16
+- String8
+- Boolean
+- i8/u8
+- i16/u16
+- i32/u32
+- i64/u64
+- f32
+- f64
+- Array
+- Structure
+
+String16
+[length hi, length low, ...char]
+Note: Length is not the byte length, but the length of characters. In other words, bytelength / 2
+
+String8
+[length hi, length low, ...char]
+
+Boolean (1 byte)
+(false) 0b0000000
+(true) 0b11111111
+
+i8/u8
+
+Single byte of data. 2s complement for negative numbers
+
+0b_ _ _ _ _ _ _ _
+
+i16/u16
+
