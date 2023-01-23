@@ -100,7 +100,7 @@ export namespace TBS {
             // @ts-ignore
         } else if (isDefined(__TBS_Serialize)) {
             // @ts-ignore
-            const out = new ArrayBuffer(3);
+            const out = new ArrayBuffer(13);
             serializeTo(data, out);
             return out;
         }

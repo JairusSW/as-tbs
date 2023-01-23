@@ -83,6 +83,11 @@ class TBSTransform extends BaseVisitor {
                 else if (type.endsWith("64"))
                     offset += 8;
             }
+            else if (["bool", "boolean"].includes(type)) {
+                serializeStmts.push(`store<${type}>(changetype<usize>(out) + <usize>${offset}${offsetDyn}, input.${key});`);
+                deserializeStmts.push(`out.${key} = load<${type}>(changetype<usize>(input) + <usize>${offset}${offsetDyn});`);
+                offset++;
+            }
             else if (type == "StaticArray") {
                 //switch (typeDeep) {
                 //case "i8" || "u8" || "i16" || "u16" || "i32" || "u32": {
@@ -90,6 +95,18 @@ class TBSTransform extends BaseVisitor {
                 serializeStmts.push(`memory.copy(changetype<usize>(out) + <usize>${offset + 2}${offsetDyn}, changetype<usize>(input.${key}), input.${key}.length);`);
                 deserializeStmts.push(`out.${key} = instantiate<${baseType}>(load<u8>(changetype<usize>(input) + <usize>${offset}${offsetDyn}));`);
                 deserializeStmts.push(`memory.copy(changetype<usize>(out.${key}), changetype<usize>(input) + <usize>${offset + 2}${offsetDyn}, load<u16>(changetype<usize>(input) + <usize>${offset}${offsetDyn}));`);
+                offset += 2;
+                offsetDyn += ` + <usize>dynamic.${key}.length`;
+                //}
+                //}
+            }
+            else if (type.startsWith("Array") && type != "ArrayBuffer") {
+                //switch (typeDeep) {
+                //case "i8" || "u8" || "i16" || "u16" || "i32" || "u32": {
+                serializeStmts.push(`store<u16>(changetype<usize>(out) + <usize>${offset}${offsetDyn}, input.${key}.length);`);
+                serializeStmts.push(`memory.copy(changetype<usize>(out) + <usize>${offset + 2}${offsetDyn}, changetype<usize>(input.${key}.buffer), input.${key}.length);`);
+                deserializeStmts.push(`out.${key} = instantiate<${baseType}>(load<u8>(changetype<usize>(input) + <usize>${offset}${offsetDyn}));`);
+                deserializeStmts.push(`memory.copy(changetype<usize>(out.${key}.buffer), changetype<usize>(input) + <usize>${offset + 2}${offsetDyn}, load<u16>(changetype<usize>(input) + <usize>${offset}${offsetDyn}));`);
                 offset += 2;
                 offsetDyn += ` + <usize>dynamic.${key}.length`;
                 //}
