@@ -6,7 +6,7 @@ class Vec3 {
 }*/
 
 import { JSON } from "json-as";
-import { TBS } from "./src/tbs";
+import { TBS } from "./src/tbs";/*
 @global
 function __TBS_Serialize<T>(input: T, out: ArrayBuffer): ArrayBuffer {
     if (input instanceof Position) {
@@ -15,7 +15,7 @@ function __TBS_Serialize<T>(input: T, out: ArrayBuffer): ArrayBuffer {
         store<u16>(changetype<usize>(out) + <usize>2, input.data.length);
         memory.copy(changetype<usize>(out) + <usize>4, changetype<usize>(input.data.buffer), input.data.length);
         store<u16>(changetype<usize>(out) + <usize>4 + <usize>input.data.length, input.name.length);
-        memory.copy(changetype<usize>(out) + <usize>6 + <usize>input.data.length, changetype<usize>(input.name), input.name.length);
+        memory.copy(changetype<usize>(out) + <usize>6 + <usize>input.data.length, changetype<usize>(input.name), input.name.length << 1);
         return out;
     }
     return unreachable();
@@ -27,14 +27,13 @@ function __TBS_Deserialize<T>(input: ArrayBuffer, out: T): T {
         out.id = load<i8>(changetype<usize>(input) + <usize>1);
         out.data = instantiate<Array<u8>>(load<u8>(changetype<usize>(input) + <usize>2));
         memory.copy(changetype<usize>(out.data.buffer), changetype<usize>(input) + <usize>4, load<u16>(changetype<usize>(input) + <usize>2));
-        out.name = String.UTF16.decodeUnsafe(changetype<usize>(input) + <usize>6 + out.data.length, load<u16>(changetype<usize>(input) + <usize>4 + <usize>out.data.length))
+        out.name = String.UTF16.decodeUnsafe(changetype<usize>(input) + <usize>6 + out.data.length, load<u16>(changetype<usize>(input) + <usize>4 + <usize>out.data.length) << 1)
         //memory.copy(changetype<usize>(out.name), changetype<usize>(input) + <usize>6 + <usize>out.data.length, load<u16>(changetype<usize>(input) + <usize>4 + <usize>out.data.length));
         return out;
     }
     return unreachable();
-}
-//@serializable
-@json
+}*/
+@serializable
 class Position {
     name!: string;
     id!: i8;
