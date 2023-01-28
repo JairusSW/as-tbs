@@ -100,28 +100,7 @@ export namespace TBS {
             // @ts-ignore
         } else if (isDefined(__TBS_Serialize)) {
             // @ts-ignore
-            const out = new ArrayBuffer(20
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-            );
+            const out = new ArrayBuffer(byteLength(data));
             serializeTo(data, out);
             return out;
         }
@@ -297,7 +276,10 @@ export namespace TBS {
         }
     }
     @inline export function byteLength<T>(data: T): i32 {
-        if (data instanceof Array) {
+        
+        if (isDefined(data.__TBS_ByteLength)) {
+            return data.__TBS_ByteLength;
+        } else if (data instanceof Array) {
             arrByteLen = 0;
             arrayByteLength(data);
             return arrByteLen;
