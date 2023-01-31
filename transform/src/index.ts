@@ -130,10 +130,10 @@ class TBSTransform extends BaseVisitor {
                 //}
             } else if (this.schemasList.filter(v => v.name == type).length) {
                 const ctx = this.schemasList.find(v => v.name == type);
-                offset += ctx!.offset;
                 //console.log("Found A Class!", ctx);
                 serializeStmts.push(`__TBS_Serialize(input.${key}, out, ${offset});`);
-                deserializeStmts.push(`__TBS_Deserialize<${this.currentClass.types[this.currentClass.keys.indexOf(key)]}>(input, out.${key}, ${offset});`)
+                deserializeStmts.push(`__TBS_Deserialize<${this.currentClass.types[this.currentClass.keys.indexOf(key)]}>(input, out.${key}, ${offset});`);
+                offset += ctx!.offset;
             }
         }
 
