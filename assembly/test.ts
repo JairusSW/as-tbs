@@ -3,9 +3,9 @@ import { TBS } from "./src/tbs";
 
 @serializable
 class Vec3 {
-    x!: f32;
-    y!: f32;
-    z!: f32;
+    x!: i32;
+    y!: i32;
+    z!: i32;
     @inline get __TBS_ByteLength(): i32 {
         return 3 << 2;
     }
@@ -15,7 +15,7 @@ class Vec3 {
 class Position {
     name!: string;
     id!: i8;
-    //pos!: Vec3;
+    pos!: Vec3;
     moving!: boolean;
     data!: Array<u8>;
     @inline get __TBS_ByteLength(): i32 {
@@ -32,24 +32,20 @@ const vec: Vec3 = {
 const pos: Position = {
     name: "p1",
     id: 9,
-    /*pos: {
+    pos: {
         x: 3,
         y: 1,
         z: 8
-    },*/
+    },
     moving: true,
     data: [1, 2, 3, 4, 5]
 };
-
-console.log(JSON.stringify(vec));
 
 const serializedVec = TBS.serialize(vec);
 
 console.log(Uint8Array.wrap(serializedVec).join(" "));
 
-console.log(JSON.stringify(__TBS_Deserialize<Vec>(TBS.serialize(vec), vec)))
-
-console.log(JSON.stringify(vec));
+console.log(JSON.stringify(__TBS_Deserialize<Vec3>(TBS.serialize(vec), vec)));
 
 const serializedPos = TBS.serialize(pos);
 

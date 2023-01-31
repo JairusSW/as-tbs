@@ -43,6 +43,7 @@ class TBSTransform extends BaseVisitor {
             return;
         }
         const className = toString(node.name);
+        console.log("Visiting Class: " + className);
         this.currentClass = {
             name: className,
             keys: [],
@@ -121,24 +122,33 @@ class TBSTransform extends BaseVisitor {
                 //}
                 //}
             }
+            else if (this.schemasList.filter(v => v.name == type).length) {
+                const ctx = this.schemasList.find(v => v.name == type);
+                console.log("Found A Class!", ctx);
+            }
         }
         this.currentClass.serializeStmts = serializeStmts.map(v => v.replaceAll(" + <usize>0", "").replaceAll(" + <usize>dynamic.", " + <usize>input."));
         this.currentClass.deserializeStmts = deserializeStmts.map(v => v.replaceAll(" + <usize>0", "").replaceAll(" + <usize>dynamic.", " + <usize>out."));
         console.log(sortedKeys, sortedTypes, sortedHashes);
         console.log(this.currentClass.serializeStmts);
         console.log(this.currentClass.deserializeStmts);
-        this.serializeFunc += `\tif (input instanceof ${className}) {\n`;
+        if (this.serializeFunc != "@global function __TBS_Serialize<T>(input: T, out: ArrayBuffer): ArrayBuffer {\n") {
+            this.serializeFunc += ` else if (input instanceof ${className}) {\n`;
+            this.deserializeFunc += ` else if (out instanceof ${className}) {\n`;
+        }
+        else {
+            this.serializeFunc += `\tif (input instanceof ${className}) {\n`;
+            this.deserializeFunc += `\tif (out instanceof ${className}) {\n`;
+        }
         for (const serStmt of this.currentClass.serializeStmts) {
             this.serializeFunc += "\t\t" + serStmt + "\n";
         }
-        this.serializeFunc += "\t\treturn out;\n\t}";
-        this.deserializeFunc += `\tif (out instanceof ${className}) {\n`;
+        this.serializeFunc += "\t\treturn out;\n}";
         for (const derStmt of this.currentClass.deserializeStmts) {
             this.deserializeFunc += "\t\t" + derStmt + "\n";
         }
-        this.deserializeFunc += "\t\treturn out;\n\t}";
-        //this.globalStatements.push(SimpleParser.parseTopLevelStatement(this.serializeFunc));
-        //this.globalStatements.push(SimpleParser.parseTopLevelStatement(this.deserializeFunc));
+        this.deserializeFunc += "\t\treturn out;\n}";
+        this.schemasList.push(this.currentClass);
     }
     visitSource(node) {
         this.globalStatements = [];
@@ -154,8 +164,12 @@ class TBSTransform extends BaseVisitor {
         this.deserializeFunc += "\n\treturn unreachable();\n}";
         console.log(this.serializeFunc);
         console.log(this.deserializeFunc);
-        node.statements.unshift(SimpleParser.parseTopLevelStatement(this.serializeFunc));
-        node.statements.unshift(SimpleParser.parseTopLevelStatement(this.deserializeFunc));
+        const serFunc = SimpleParser.parseTopLevelStatement(this.serializeFunc);
+        const deFunc = SimpleParser.parseTopLevelStatement(this.deserializeFunc);
+        replacer.visit(serFunc);
+        replacer.visit(deFunc);
+        node.statements.unshift(serFunc);
+        node.statements.unshift(deFunc);
         //node.statements.unshift(...this.globalStatements);
     }
 }
