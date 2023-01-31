@@ -8,6 +8,7 @@ class SchemaData {
     name = "";
     serializeStmts = [];
     deserializeStmts = [];
+    offset = 0;
 }
 //let serializeText = "function __TBS_Serialize<T>(input: T, out: ArrayBuffer): ArrayBuffer {\n";
 class TBSTransform extends BaseVisitor {
@@ -16,8 +17,8 @@ class TBSTransform extends BaseVisitor {
     sources = [];
     // TODO: No globals, AAHHHH!
     // Make per-file and have TBS call the correct ser/de function
-    serializeFunc = "@global function __TBS_Serialize<T>(input: T, out: ArrayBuffer): ArrayBuffer {\n";
-    deserializeFunc = "@global function __TBS_Deserialize<T>(input: ArrayBuffer, out: T): T {\n";
+    serializeFunc = "@global function __TBS_Serialize<T>(input: T, out: ArrayBuffer, offset: usize = 0): ArrayBuffer {\n";
+    deserializeFunc = "@global function __TBS_Deserialize<T>(input: ArrayBuffer, out: T, offset: usize = 0): T {\n";
     globalStatements = [];
     visitMethodDeclaration() { }
     visitFieldDeclaration(node) {
@@ -49,7 +50,8 @@ class TBSTransform extends BaseVisitor {
             keys: [],
             types: [],
             serializeStmts: [],
-            deserializeStmts: []
+            deserializeStmts: [],
+            offset: 0
         };
         this.visit(node.members);
         const keyHashes = this.currentClass.keys.map((v) => [v, djb2Hash(v)]).sort((a, b) => a[1] - b[1]);
@@ -73,8 +75,8 @@ class TBSTransform extends BaseVisitor {
             const type = baseType;
             console.log("type: " + type);
             if (["i8", "u8", "i16", "u16", "i32", "u32", "f32", "i64", "I64", "u64", "U64", "f64"].includes(type)) {
-                serializeStmts.push(`store<${type}>(changetype<usize>(out) + <usize>${offset + offsetDyn}, input.${key});`);
-                deserializeStmts.push(`out.${key} = load<${type}>(changetype<usize>(input) + <usize>${offset + offsetDyn});`);
+                serializeStmts.push(`store<${type}>(changetype<usize>(out) + offset + <usize>${offset + offsetDyn}, input.${key});`);
+                deserializeStmts.push(`out.${key} = load<${type}>(changetype<usize>(input) + offset + <usize>${offset + offsetDyn});`);
                 if (type.endsWith("8"))
                     offset++;
                 else if (type.endsWith("16"))
@@ -85,27 +87,27 @@ class TBSTransform extends BaseVisitor {
                     offset += 8;
             }
             else if (["bool", "boolean"].includes(type)) {
-                serializeStmts.push(`store<${type}>(changetype<usize>(out) + <usize>${offset + offsetDyn}, input.${key});`);
-                deserializeStmts.push(`out.${key} = load<${type}>(changetype<usize>(input) + <usize>${offset + offsetDyn});`);
+                serializeStmts.push(`store<${type}>(changetype<usize>(out) + offset + <usize>${offset + offsetDyn}, input.${key});`);
+                deserializeStmts.push(`out.${key} = load<${type}>(changetype<usize>(input) + offset + <usize>${offset + offsetDyn});`);
                 offset++;
             }
             else if (type == "StaticArray") {
                 //switch (typeDeep) {
                 //case "i8" || "u8" || "i16" || "u16" || "i32" || "u32": {
-                serializeStmts.push(`store<u16>(changetype<usize>(out) + <usize>${offset + offsetDyn}, input.${key}.length);`);
-                serializeStmts.push(`memory.copy(changetype<usize>(out) + <usize>${offset + 2}${offsetDyn}, changetype<usize>(input.${key}), input.${key}.length);`);
-                deserializeStmts.push(`out.${key} = instantiate<${baseType}>(load<u8>(changetype<usize>(input) + <usize>${offset + offsetDyn}));`);
-                deserializeStmts.push(`memory.copy(changetype<usize>(out.${key}), changetype<usize>(input) + <usize>${offset + 2}${offsetDyn}, load<u16>(changetype<usize>(input) + <usize>${offset + offsetDyn}));`);
+                serializeStmts.push(`store<u16>(changetype<usize>(out) + offset + <usize>${offset + offsetDyn}, input.${key}.length);`);
+                serializeStmts.push(`memory.copy(changetype<usize>(out) + offset + <usize>${offset + 2}${offsetDyn}, changetype<usize>(input.${key}), input.${key}.length);`);
+                deserializeStmts.push(`out.${key} = instantiate<${baseType}>(load<u8>(changetype<usize>(input) + offset + <usize>${offset + offsetDyn}));`);
+                deserializeStmts.push(`memory.copy(changetype<usize>(out.${key}), changetype<usize>(input) + offset + <usize>${offset + 2}${offsetDyn}, load<u16>(changetype<usize>(input) + offset + <usize>${offset + offsetDyn}));`);
                 offset += 2;
                 offsetDyn += ` + <usize>dynamic.${key}.length`;
                 //}
                 //}
             }
             else if (type.startsWith("Array") && type != "ArrayBuffer") {
-                serializeStmts.push(`store<u16>(changetype<usize>(out) + <usize>${offset + offsetDyn}, input.${key}.length);`);
-                serializeStmts.push(`memory.copy(changetype<usize>(out) + <usize>${offset + 2}${offsetDyn}, changetype<usize>(input.${key}.buffer), input.${key}.length);`);
-                deserializeStmts.push(`out.${key} = instantiate<${baseType}>(load<u8>(changetype<usize>(input) + <usize>${offset + offsetDyn}));`);
-                deserializeStmts.push(`memory.copy(changetype<usize>(out.${key}.buffer), changetype<usize>(input) + <usize>${offset + 2}${offsetDyn}, load<u16>(changetype<usize>(input) + <usize>${offset + offsetDyn}));`);
+                serializeStmts.push(`store<u16>(changetype<usize>(out) + offset + <usize>${offset + offsetDyn}, input.${key}.length);`);
+                serializeStmts.push(`memory.copy(changetype<usize>(out) + offset + <usize>${offset + 2}${offsetDyn}, changetype<usize>(input.${key}.buffer), input.${key}.length);`);
+                deserializeStmts.push(`out.${key} = instantiate<${baseType}>(load<u8>(changetype<usize>(input) + offset + <usize>${offset + offsetDyn}));`);
+                deserializeStmts.push(`memory.copy(changetype<usize>(out.${key}.buffer), changetype<usize>(input) + offset + <usize>${offset + 2}${offsetDyn}, load<u16>(changetype<usize>(input) + offset + <usize>${offset + offsetDyn}));`);
                 offset += 2;
                 offsetDyn += ` + <usize>dynamic.${key}.length`;
                 //}
@@ -114,9 +116,9 @@ class TBSTransform extends BaseVisitor {
             else if (type == "string") {
                 //switch (typeDeep) {
                 //case "i8" || "u8" || "i16" || "u16" || "i32" || "u32": {
-                serializeStmts.push(`store<u16>(changetype<usize>(out) + <usize>${offset + offsetDyn}, input.${key}.length);`);
-                serializeStmts.push(`memory.copy(changetype<usize>(out) + <usize>${offset + 2}${offsetDyn}, changetype<usize>(input.${key}), input.${key}.length << 1);`);
-                deserializeStmts.push(`out.${key} = String.UTF16.decodeUnsafe(changetype<usize>(input) + <usize>${offset + 2}${offsetDyn}, load<u16>(changetype<usize>(input) + <usize>${offset + offsetDyn}) << 1);`);
+                serializeStmts.push(`store<u16>(changetype<usize>(out) + offset + <usize>${offset + offsetDyn}, input.${key}.length);`);
+                serializeStmts.push(`memory.copy(changetype<usize>(out) + offset + <usize>${offset + 2}${offsetDyn}, changetype<usize>(input.${key}), input.${key}.length << 1);`);
+                deserializeStmts.push(`out.${key} = String.UTF16.decodeUnsafe(changetype<usize>(input) + offset + <usize>${offset + 2}${offsetDyn}, load<u16>(changetype<usize>(input) + offset + <usize>${offset + offsetDyn}) << 1);`);
                 offset += 2;
                 offsetDyn += ` + <usize>(dynamic.${key}.length << 1)`;
                 //}
@@ -124,15 +126,19 @@ class TBSTransform extends BaseVisitor {
             }
             else if (this.schemasList.filter(v => v.name == type).length) {
                 const ctx = this.schemasList.find(v => v.name == type);
+                offset += ctx.offset;
                 console.log("Found A Class!", ctx);
+                serializeStmts.push(`__TBS_Serialize(input.${key}, out, ${offset});`);
+                deserializeStmts.push(`__TBS_Deserialize<${this.currentClass.types[this.currentClass.keys.indexOf(key)]}>(input, out.${key}, ${offset});`);
             }
         }
         this.currentClass.serializeStmts = serializeStmts.map(v => v.replaceAll(" + <usize>0", "").replaceAll(" + <usize>dynamic.", " + <usize>input."));
         this.currentClass.deserializeStmts = deserializeStmts.map(v => v.replaceAll(" + <usize>0", "").replaceAll(" + <usize>dynamic.", " + <usize>out."));
         console.log(sortedKeys, sortedTypes, sortedHashes);
+        this.currentClass.offset = offset;
         console.log(this.currentClass.serializeStmts);
         console.log(this.currentClass.deserializeStmts);
-        if (this.serializeFunc != "@global function __TBS_Serialize<T>(input: T, out: ArrayBuffer): ArrayBuffer {\n") {
+        if (this.serializeFunc != "@global function __TBS_Serialize<T>(input: T, out: ArrayBuffer, offset: usize = 0): ArrayBuffer {\n") {
             this.serializeFunc += ` else if (input instanceof ${className}) {\n`;
             this.deserializeFunc += ` else if (out instanceof ${className}) {\n`;
         }
@@ -158,7 +164,7 @@ class TBSTransform extends BaseVisitor {
             console.log(toString(stmt));
             replacer.visit(stmt);
         }
-        if (this.serializeFunc == "@global function __TBS_Serialize<T>(input: T, out: ArrayBuffer): ArrayBuffer {\n")
+        if (this.serializeFunc == "@global function __TBS_Serialize<T>(input: T, out: ArrayBuffer, offset: usize = 0): ArrayBuffer {\n")
             return;
         this.serializeFunc += "\n\treturn unreachable();\n}";
         this.deserializeFunc += "\n\treturn unreachable();\n}";
