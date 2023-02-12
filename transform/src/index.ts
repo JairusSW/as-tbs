@@ -8,7 +8,6 @@ import {
 import { toString } from "visitor-as/dist/utils.js";
 import { BaseVisitor, SimpleParser } from "visitor-as/dist/index.js";
 import { Transform } from "assemblyscript/dist/transform.js";
-import { RangeTransform } from "visitor-as/dist/transformRange.js";
 class SchemaData {
     public keys: any[] = [];
     public types: string[] = [];
@@ -18,7 +17,7 @@ class SchemaData {
     public offset: number = 0;
 }
 
-//let serializeText = "function __TBS_Serialize<T>(input: T, out: ArrayBuffer): ArrayBuffer {\n";
+//let serializeText = "__TBS_Serialize<T>(input: T, out: ArrayBuffer): ArrayBuffer {\n";
 class TBSTransform extends BaseVisitor {
     public schemasList: SchemaData[] = [];
     public currentClass!: SchemaData;
@@ -26,8 +25,8 @@ class TBSTransform extends BaseVisitor {
 
     // TODO: No globals, AAHHHH!
     // Make per-file and have TBS call the correct ser/de function
-    public serializeFunc: string = "@global function __TBS_Serialize<T>(input: T, out: ArrayBuffer, offset: usize = 0): ArrayBuffer {\n";
-    public deserializeFunc: string = "@global function __TBS_Deserialize<T>(input: ArrayBuffer, out: T, offset: usize = 0): T {\n";
+    public serializeFunc: string = "";
+    public deserializeFunc: string = "";
 
     public globalStatements: Statement[] = [];
 
@@ -52,6 +51,10 @@ class TBSTransform extends BaseVisitor {
         }
 
         const className = toString(node.name);
+
+        this.serializeFunc = `__TBS_Serialize(input: ${className}, out: ArrayBuffer, offset: usize = 0): ArrayBuffer {\n`;
+        this.deserializeFunc = `__TBS_Deserialize(input: ArrayBuffer, out: ${className}, offset: usize = 0): ${className} {\n`;
+
         console.log("Visiting Class: " + className);
         this.currentClass = {
             name: className,
@@ -131,8 +134,9 @@ class TBSTransform extends BaseVisitor {
             } else if (this.schemasList.filter(v => v.name == type).length) {
                 const ctx = this.schemasList.find(v => v.name == type);
                 //console.log("Found A Class!", ctx);
-                serializeStmts.push(`__TBS_Serialize(input.${key}, out, ${offset});`);
-                deserializeStmts.push(`__TBS_Deserialize<${this.currentClass.types[this.currentClass.keys.indexOf(key)]}>(input, out.${key}, ${offset});`);
+                serializeStmts.push(`input.${key}.__TBS_Serialize(input.${key}, out, ${offset});`);
+                deserializeStmts.push(`out.${key} = changetype<nonnull<${type}>>(__new(offsetof<nonnull<${type}>>(), idof<nonnull<${type}>>()));`);
+                deserializeStmts.push(`out.${key}.__TBS_Deserialize(input, out.${key}, ${offset});`);
                 offset += ctx!.offset;
             }
         }
@@ -146,14 +150,6 @@ class TBSTransform extends BaseVisitor {
         console.log(this.currentClass.serializeStmts);
         console.log(this.currentClass.deserializeStmts);
 
-        if (this.serializeFunc != "@global function __TBS_Serialize<T>(input: T, out: ArrayBuffer, offset: usize = 0): ArrayBuffer {\n") {
-            this.serializeFunc += ` else if (input instanceof ${className}) {\n`;
-            this.deserializeFunc += ` else if (out instanceof ${className}) {\n`;
-        } else {
-            this.serializeFunc += `\tif (input instanceof ${className}) {\n`;
-            this.deserializeFunc += `\tif (out instanceof ${className}) {\n`;
-        }
-
         for (const serStmt of this.currentClass.serializeStmts) {
             this.serializeFunc += "\t\t" + serStmt + "\n"
         }
@@ -165,18 +161,26 @@ class TBSTransform extends BaseVisitor {
         }
         this.deserializeFunc += "\t\treturn out;\n}";
 
+        console.log(this.serializeFunc);
+        console.log(this.deserializeFunc);
+
+        const serializeMethod = SimpleParser.parseClassMember(this.serializeFunc, node);
+        const deserializeMethod = SimpleParser.parseClassMember(this.deserializeFunc, node);
+
+        node.members.push(serializeMethod, deserializeMethod);
+
         this.schemasList.push(this.currentClass);
     }
     visitSource(node: Source): void {
         this.globalStatements = [];
         super.visitSource(node);
-        const replacer = new RangeTransform(node);
+        /*const replacer = new RangeTransform(node);
         for (const stmt of this.globalStatements) {
             console.log(toString(stmt));
             replacer.visit(stmt);
         }
 
-        if (this.serializeFunc == "@global function __TBS_Serialize<T>(input: T, out: ArrayBuffer, offset: usize = 0): ArrayBuffer {\n") return;
+        if (this.serializeFunc == "__TBS_Serialize<T>(input: T, out: ArrayBuffer, offset: usize = 0): ArrayBuffer {\n") return;
         this.serializeFunc += "\n\treturn unreachable();\n}";
         this.deserializeFunc += "\n\treturn unreachable();\n}";
 
@@ -189,7 +193,7 @@ class TBSTransform extends BaseVisitor {
         replacer.visit(deFunc);
         node.statements.unshift(serFunc);
         node.statements.unshift(deFunc);
-
+*/
         //node.statements.unshift(...this.globalStatements);
     }
 }

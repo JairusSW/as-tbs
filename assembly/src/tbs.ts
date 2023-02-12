@@ -98,7 +98,7 @@ export namespace TBS {
             // @ts-ignore
             return out;
             // @ts-ignore
-        } else if (isDefined(__TBS_Serialize)) {
+        } else if (isDefined(data.__TBS_Serialize)) {
             // @ts-ignore
             const out = new ArrayBuffer(byteLength(data));
             serializeTo(data, out);
@@ -150,9 +150,9 @@ export namespace TBS {
                 serializeDeepArray(data, out);
             }
             // @ts-ignore
-        } else if (isDefined(__TBS_Serialize)) {
+        } else if (isDefined(data.__TBS_Serialize)) {
             // @ts-ignore
-            __TBS_Serialize(data, out);
+            data.__TBS_Serialize(data, out);
         }
     }
     // @ts-ignore
@@ -180,14 +180,14 @@ export namespace TBS {
                 return parseArbitrary(data, load<u8>(changetype<usize>(data)));
             }
             // @ts-ignore
-            const inst: nonnull<T> = changetype<nonnull<T>>(__new(offsetof<nonnull<T>>(), idof<nonnull<T>>()));
+            const out: nonnull<T> = changetype<nonnull<T>>(__new(offsetof<nonnull<T>>(), idof<nonnull<T>>()));
             // @ts-ignore
-            const out = inst.__TBS_Instantiate();
+            //const out = inst.__TBS_Instantiate();
             //heap.free(changetype<usize>(inst));
             // @ts-ignore
-            if (isDefined(__TBS_Deserialize)) {
+            if (isDefined(out.__TBS_Deserialize)) {
                 // @ts-ignore
-                __TBS_Deserialize(data, out);
+                out.__TBS_Deserialize(data, out);
                 return out;
             }
             return unreachable();
@@ -270,9 +270,9 @@ export namespace TBS {
                 return;
             }
             // @ts-ignore
-        } else if (isDefined(__TBS_Deserialize)) {
+        } else if (isDefined(out.__TBS_Deserialize)) {
             // @ts-ignore
-            __TBS_Deserialize(data, out);
+            out.__TBS_Deserialize(data, out);
         }
     }
     @inline export function byteLength<T>(data: T): i32 {
