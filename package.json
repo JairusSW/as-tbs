@@ -8,7 +8,7 @@
   "license": "MIT",
   "scripts": {
     "aspect": "asp",
-    "bench:astral": "astral --runtime stub --uncheckedBehavior never",
+    "bench:astral": "astral --runtime stub --uncheckedBehavior always > benchmark-results.txt",
     "build:test": "asc assembly/test.ts --target test",
     "build:transform": "tsc -p ./transform",
     "test:wasmtime": "wasmtime ./build/test.wasm",

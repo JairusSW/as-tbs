@@ -95,15 +95,15 @@ bench("Serialize Vec3", () => {
 bench("Parse Vec3", () => {
     blackbox(vec.__TBS_Deserialize(serializedVec3, vec));
 });
-
+/*
 bench("Serialize Position", () => {
     blackbox(pos.__TBS_Serialize(pos, serializedPos));
 });
 
 bench("Parse Position", () => {
-    //blackbox(pos.__TBS_Deserialize(serializedPos, pos));
+    blackbox(pos.__TBS_Deserialize(serializedPos, pos));
 });
-
+*/
 bench("Serialize String", () => {
     blackbox(TBS.serialize<string>("hello"));
 });

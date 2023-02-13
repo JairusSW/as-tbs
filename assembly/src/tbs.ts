@@ -120,7 +120,8 @@ export namespace TBS {
         if (isString<T>()) {
             // UTF-16 String
             store<u8>(changetype<usize>(out) + offset, Types.StringU8);
-            memory.copy(changetype<usize>(out) + offset + <usize>1, changetype<usize>(data), (<string>data).length << 1);
+            //memory.copy(changetype<usize>(out) + offset + <usize>1, changetype<usize>(data), (<string>data).length << 1);
+            store<ArrayBuffer>(changetype<usize>(out) + 1, changetype<ArrayBuffer>(data));
         } else if (isBoolean<T>()) {
             store<bool>(changetype<usize>(out) + offset, <bool>data);
         } else if (data instanceof u8) {

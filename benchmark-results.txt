@@ -1,0 +1,17 @@
+Compiling assembly/__benches__/tbs.ts
+
+Benchmarking Serialize Vec3: Warming up for 3000ms
+Benchmarking Serialize Vec3: Collecting 100 samples in estimated 5000ms (299M iterations)
+Benchmarking Serialize Vec3: Analyzing
+Serialize Vec3          time: [16.14ns 16.483ns 16.835ns]
+                        change: [+7.1018% +9.4376% +11.733%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+
+Benchmarking Parse Vec3: Warming up for 3000ms
+Benchmarking Parse Vec3: Collecting 100 samples in estimated 5000ms (357M iterations)
+Benchmarking Parse Vec3: Analyzing
+Parse Vec3              time: [14.348ns 14.525ns 14.702ns]
+                        change: [-4.2411% -2.7203% -1.1562%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 3 outliers among 100 measurements (3%)
+  3 (3%) high mild
