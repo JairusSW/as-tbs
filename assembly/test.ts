@@ -1,25 +1,13 @@
 import { JSON } from "json-as";
 import { TBS } from "./src/tbs";
 
-@json
+@serializable
 class Vec3 {
     x!: i8;
     y!: i8;
     z!: i8;
     @inline get __TBS_ByteLength(): i32 {
         return 3;
-    }
-    __TBS_Serialize(input: Vec3, out: ArrayBuffer, offset: usize = 0): ArrayBuffer {
-        store<i8>(changetype<usize>(out) + offset, input.x);
-        store<i8>(changetype<usize>(out) + offset + <usize>1, input.y);
-        store<i8>(changetype<usize>(out) + offset + <usize>2, input.z);
-        return out;
-    }
-    __TBS_Deserialize(input: ArrayBuffer, out: Vec3, offset: usize = 0): Vec3 {
-        out.x = load<i8>(changetype<usize>(input) + offset);
-        out.y = load<i8>(changetype<usize>(input) + offset + <usize>1);
-        out.z = load<i8>(changetype<usize>(input) + offset + <usize>2);
-        return out;
     }
 }
 
@@ -46,10 +34,11 @@ class Position {
     __TBS_Deserialize(input: ArrayBuffer, out: Position, offset: usize = 0): Position {
         out.moving = load<boolean>(changetype<usize>(input) + offset);
         out.id = load<i8>(changetype<usize>(input) + offset + <usize>1);
-        out.pos = changetype<nonnull<Vec3>>(__new(offsetof<nonnull<Vec3>>(), idof<nonnull<Vec3>>()));
+        //out.pos = changetype<nonnull<Vec3>>(__new(offsetof<nonnull<Vec3>>(), idof<nonnull<Vec3>>()));
         out.pos.__TBS_Deserialize(input, out.pos, 2);
-        out.data = changetype<Array<u8>>(load<u8>(changetype<usize>(input) + offset + <usize>5));
-        memory.copy(changetype<usize>(out.data.buffer), changetype<usize>(input) + offset + <usize>7, load<u16>(changetype<usize>(input) + offset + <usize>5));
+        //out.data = instantiateArrayWithBuffer<Array<u8>>(input, offset + <usize>7, 5);// instantiate<Array<u8>>(load<u8>(changetype<usize>(input) + offset + <usize>5));
+        out.data.buffer = input.slice(offset + 7, offset + 7 + 5);
+        store<usize>(changetype<usize>(out.data), changetype<usize>(out.data.buffer), offsetof<Array<u8>>("dataStart")); //memory.copy(changetype<usize>(out.data.buffer), changetype<usize>(input) + offset + <usize>7, load<u16>(changetype<usize>(input) + offset + <usize>5));
         out.name = String.UTF16.decodeUnsafe(changetype<usize>(input) + offset + <usize>9 + <usize>out.data.length, load<u16>(changetype<usize>(input) + offset + <usize>7 + <usize>out.data.length) << 1);
         return out;
     }
@@ -79,7 +68,11 @@ vec.__TBS_Serialize(vec, serializedVec);
 
 console.log(Uint8Array.wrap(serializedVec).join(" "));
 
-const parsedVec = new Vec3();
+const parsedVec: Vec3 = {
+    x: 0,
+    y: 0,
+    z: 0
+};
 
 vec.__TBS_Deserialize(serializedVec, parsedVec);
 
@@ -91,8 +84,14 @@ pos.__TBS_Serialize(pos, serializedPos);
 
 console.log(Uint8Array.wrap(serializedPos).join(" "));
 
-const parsedPos = new Position();
+const parsedPos = pos;
 
 pos.__TBS_Deserialize(serializedPos, parsedPos);
 
-console.log(JSON.stringify(parsedPos))
+console.log(JSON.stringify(parsedPos));
+
+const arr = new Array<u8>(3);
+
+memory.copy(arr.dataStart, changetype<usize>(serializedVec), 3);
+
+console.log(JSON.stringify(arr));

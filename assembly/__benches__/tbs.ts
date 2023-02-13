@@ -45,11 +45,22 @@ class Position {
         out.id = load<i8>(changetype<usize>(input) + offset + <usize>1);
         //out.pos = changetype<nonnull<Vec3>>(__new(offsetof<nonnull<Vec3>>(), idof<nonnull<Vec3>>()));
         out.pos.__TBS_Deserialize(input, out.pos, 2);
-        out.data = instantiate<Array<u8>>(load<u8>(changetype<usize>(input) + offset + <usize>5));
-        memory.copy(changetype<usize>(out.data.buffer), changetype<usize>(input) + offset + <usize>7, load<u16>(changetype<usize>(input) + offset + <usize>5));
-        out.name = String.UTF16.decodeUnsafe(changetype<usize>(input) + offset + <usize>9 + <usize>out.data.length, load<u16>(changetype<usize>(input) + offset + <usize>7 + <usize>out.data.length) << 1);
+        //out.data = instantiateArrayWithBuffer<Array<u8>>(input, offset + <usize>7, 5);// instantiate<Array<u8>>(load<u8>(changetype<usize>(input) + offset + <usize>5));
+        out.data.buffer = input.slice(offset + 7, offset + 7 + 5);
+        store<usize>(changetype<usize>(out.data), changetype<usize>(out.data.buffer), offsetof<Array<u8>>("dataStart")); //memory.copy(changetype<usize>(out.data.buffer), changetype<usize>(input) + offset + <usize>7, load<u16>(changetype<usize>(input) + offset + <usize>5));
+        out.name = changetype<string>(changetype<usize>(input.slice(offset + <usize>9 + <usize>out.data.length, offset + <usize>9 + <usize>out.data.length + load<u16>(changetype<usize>(input) + offset + <usize>7 + <usize>out.data.length) << 1)));
         return out;
     }
+}
+
+@inline function instantiateArrayWithBuffer<T extends Array<any>>(buffer: ArrayBuffer, offset: usize, byteLength: i32): T {
+    const buf = buffer.slice(offset, offset + byteLength);
+    const arr = changetype<T>(__new(offsetof<T>(), idof<T>()));
+    store<usize>(changetype<usize>(arr), changetype<usize>(buf), offsetof<T>("dataStart"));
+    arr.byteLength = byteLength;
+    arr.buffer = buf;
+    arr.length = byteLength;
+    return arr;
 }
 
 const pos: Position = {
@@ -90,7 +101,7 @@ bench("Serialize Position", () => {
 });
 
 bench("Parse Position", () => {
-    blackbox(pos.__TBS_Deserialize(serializedPos, pos));
+    //blackbox(pos.__TBS_Deserialize(serializedPos, pos));
 });
 
 bench("Serialize String", () => {
