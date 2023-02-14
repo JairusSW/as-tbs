@@ -2,19 +2,19 @@ Typed Binary Storage is a schema-centered serialization meant to enable the effi
 
 ## Contents
 
-💡[Motivation](#motivation)
+- 💡[Motivation](#motivation)
 
-🕵️‍♂️[Comparision](#comparision)
+- 🕵️‍♂️[Comparision](#comparision)
 
-⏱️[Performance](#performance)
+- ⏱️[Performance](#performance)
 
-📦[Installation](#installation)
+- 📦[Installation](#installation)
 
-⚒️[Usage](#usage)
+- ⚒️[Usage](#usage)
 
-🧮[Implementations](#implementations)
+- 🧮[Implementations](#implementations)
 
-📖[Documentation](#documentation)
+- 📖[Documentation](#documentation)
 
 ## Motivation
 
