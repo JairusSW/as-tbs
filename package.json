@@ -1,34 +1,54 @@
 {
-    "name": "tbs",
-    "version": "0.1.0",
-    "description": "Speedy, simplistic, and slim schema-centered ser/de",
-    "types": "assembly/index.ts",
-    "author": "Jairus Tanaka",
-    "contributors": [],
-    "license": "MIT",
-    "scripts": {
-        "build:test": "asc assembly/index.ts --target test",
-        "build:release": "asc assembly/index.ts --target test",
-        "test:wasmtime": "wasmtime ./build/test.wasm tbs ./schemas -o ./schemas/build",
-        "release:wasmtime": "wasmtime ./build/release.wasm"
-    },
-    "dependencies": {
-        "@assemblyscript/wasi-shim": "^0.1.0",
-        "as-rainbow": "^0.1.0",
-        "assemblyscript": "^0.27.0"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/JairusSW/tbs.git"
-    },
-    "keywords": [
-        "tbs",
-        "serialize",
-        "deserialize"
-    ],
-    "bugs": {
-        "url": "https://github.com/JairusSW/tbs/issues"
-    },
-    "homepage": "https://github.com/JairusSW/tbs#readme",
-    "type": "module"
+  "name": "as-tbs",
+  "version": "0.1.0",
+  "description": "Implementation of Typed Binary Storage in AssemblyScript ",
+  "types": "assembly/index.ts",
+  "author": "Jairus Tanaka",
+  "contributors": [],
+  "license": "MIT",
+  "scripts": {
+    "aspect": "asp",
+    "bench:astral": "astral --runtime stub --uncheckedBehavior always > benchmark-results.txt",
+    "build:test": "asc assembly/test.ts --target test",
+    "build:transform": "tsc -p ./transform",
+    "test:wasmtime": "wasmtime ./build/test.wasm",
+    "test:lunatic": "lunatic ./build/test.wasm",
+    "test:wasm3": "wasm3 ./build/test.wasm",
+    "prettier": "as-prettier -w ."
+  },
+  "devDependencies": {
+    "@as-pect/cli": "^8.0.1",
+    "@as-tral/cli": "^2.0.0",
+    "@ason/assembly": "^0.11.1",
+    "@assemblyscript/loader": "^0.26.3",
+    "@assemblyscript/wasi-shim": "^0.1.0",
+    "as-bignum": "^0.2.23",
+    "assemblyscript": "^0.26.3",
+    "assemblyscript-prettier": "^1.0.6",
+    "json-as": "^0.5.16",
+    "prettier": "^2.8.3",
+    "typescript": "^4.9.4"
+  },
+  "dependencies": {
+    "as-option": "^0.0.2",
+    "as-string-sink": "^0.5.0",
+    "as-variant": "^0.4.1",
+    "byte-parse-as": "^0.1.0",
+    "visitor-as": "^0.11.4"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JairusSW/as-tbs.git"
+  },
+  "keywords": [
+    "assemblyscript",
+    "tbs",
+    "serialize",
+    "deserialize"
+  ],
+  "bugs": {
+    "url": "https://github.com/JairusSW/as-tbs/issues"
+  },
+  "homepage": "https://github.com/JairusSW/as-tbs#readme",
+  "type": "module"
 }

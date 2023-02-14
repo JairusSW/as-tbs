@@ -1,6 +1,4 @@
-import { Variant } from "as-variant";
-import { getArrayDepth } from "./util";
-import { JSON } from "json-as";
+import { Variant } from "as-variant/assembly";
 
 export type string8 = string;
 export namespace TBS {
