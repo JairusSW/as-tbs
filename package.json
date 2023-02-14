@@ -7,9 +7,10 @@
     "contributors": [],
     "license": "MIT",
     "scripts": {
-        "build:test": "asc assembly/test.ts --target test",
-        "build:release": "asc assembly/test.ts --target test",
-        "run:wasmtime": "wasmtime ./build/test.wasm"
+        "build:test": "asc assembly/index.ts --target test",
+        "build:release": "asc assembly/index.ts --target test",
+        "test:wasmtime": "wasmtime ./build/test.wasm tbs ./schemas -o ./schemas/build",
+        "release:wasmtime": "wasmtime ./build/release.wasm"
     },
     "dependencies": {
         "@assemblyscript/wasi-shim": "^0.1.0",
