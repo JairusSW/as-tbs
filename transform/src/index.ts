@@ -52,8 +52,8 @@ class TBSTransform extends BaseVisitor {
 
         const className = toString(node.name);
 
-        this.serializeFunc = `__TBS_Serialize(input: ${className}, out: ArrayBuffer, offset: usize = 0): ArrayBuffer {\n`;
-        this.deserializeFunc = `__TBS_Deserialize(input: ArrayBuffer, out: ${className}, offset: usize = 0): ${className} {\n`;
+        this.serializeFunc = `@inline __TBS_Serialize(input: ${className}, out: ArrayBuffer, offset: usize = 0): ArrayBuffer {\n`;
+        this.deserializeFunc = `@inline __TBS_Deserialize(input: ArrayBuffer, out: ${className}, offset: usize = 0): ${className} {\n`;
 
         console.log("Visiting Class: " + className);
         this.currentClass = {
@@ -105,7 +105,7 @@ class TBSTransform extends BaseVisitor {
                 //case "i8" || "u8" || "i16" || "u16" || "i32" || "u32": {
                 serializeStmts.push(`store<u16>(changetype<usize>(out) + offset + <usize>${offset + offsetDyn}, input.${key}.length);`);
                 serializeStmts.push(`memory.copy(changetype<usize>(out) + offset + <usize>${offset + 2}${offsetDyn}, changetype<usize>(input.${key}), input.${key}.length);`);
-                deserializeStmts.push(`out.${key} = instantiate<${baseType}>(load<u8>(changetype<usize>(input) + offset + <usize>${offset + offsetDyn}));`)
+                //deserializeStmts.push(`out.${key} = instantiate<${baseType}>(load<u8>(changetype<usize>(input) + offset + <usize>${offset + offsetDyn}));`)
                 deserializeStmts.push(`memory.copy(changetype<usize>(out.${key}), changetype<usize>(input) + offset + <usize>${offset + 2}${offsetDyn}, load<u16>(changetype<usize>(input) + offset + <usize>${offset + offsetDyn}));`);
                 offset += 2;
                 offsetDyn += ` + <usize>dynamic.${key}.length`;
@@ -115,8 +115,12 @@ class TBSTransform extends BaseVisitor {
 
                 serializeStmts.push(`store<u16>(changetype<usize>(out) + offset + <usize>${offset + offsetDyn}, input.${key}.length);`);
                 serializeStmts.push(`memory.copy(changetype<usize>(out) + offset + <usize>${offset + 2}${offsetDyn}, changetype<usize>(input.${key}.buffer), input.${key}.length);`);
-                deserializeStmts.push(`out.${key} = instantiate<${baseType}>(load<u8>(changetype<usize>(input) + offset + <usize>${offset + offsetDyn}));`)
-                deserializeStmts.push(`memory.copy(changetype<usize>(out.${key}.buffer), changetype<usize>(input) + offset + <usize>${offset + 2}${offsetDyn}, load<u16>(changetype<usize>(input) + offset + <usize>${offset + offsetDyn}));`);
+                //deserializeStmts.push(`out.${key} = instantiate<${baseType}>(load<u8>(changetype<usize>(input) + offset + <usize>${offset + offsetDyn}));`)
+                deserializeStmts.push(`out.${key}.buffer = input.slice(offset + <usize>${offset + 2}${offsetDyn}, offset + <usize>${offset + 2}${offsetDyn} + load<u16>(changetype<usize>(input) + offset + <usize>${offset + offsetDyn}));`);
+                deserializeStmts.push(`store<usize>(changetype<usize>(out.${key}), changetype<usize>(out.${key}.buffer), offsetof<${type}>("dataStart"));`);
+                deserializeStmts.push(`out.${key}.byteLength = out.${key}.buffer.byteLength;`);
+                deserializeStmts.push(`out.${key}.length = out.${key}.buffer.byteLength;`);
+                // TODO ^ This ONLY works for single byte arrays!!!
                 offset += 2;
                 offsetDyn += ` + <usize>dynamic.${key}.length`;
                 //}
@@ -135,7 +139,7 @@ class TBSTransform extends BaseVisitor {
                 const ctx = this.schemasList.find(v => v.name == type);
                 //console.log("Found A Class!", ctx);
                 serializeStmts.push(`input.${key}.__TBS_Serialize(input.${key}, out, ${offset});`);
-                deserializeStmts.push(`out.${key} = changetype<nonnull<${type}>>(__new(offsetof<nonnull<${type}>>(), idof<nonnull<${type}>>()));`);
+                //deserializeStmts.push(`out.${key} = changetype<nonnull<${type}>>(__new(offsetof<nonnull<${type}>>(), idof<nonnull<${type}>>()));`);
                 deserializeStmts.push(`out.${key}.__TBS_Deserialize(input, out.${key}, ${offset});`);
                 offset += ctx!.offset;
             }
@@ -161,13 +165,18 @@ class TBSTransform extends BaseVisitor {
         }
         this.deserializeFunc += "\t\treturn out;\n}";
 
-        console.log(this.serializeFunc);
-        console.log(this.deserializeFunc);
-
         const serializeMethod = SimpleParser.parseClassMember(this.serializeFunc, node);
         const deserializeMethod = SimpleParser.parseClassMember(this.deserializeFunc, node);
 
-        node.members.push(serializeMethod, deserializeMethod);
+        if (!node.members.find(v => v.name.text == "__TBS_Serialize")) {
+            node.members.push(serializeMethod);
+            console.log(this.serializeFunc);
+        }
+
+        if (!node.members.find(v => v.name.text == "__TBS_Deserialize")) {
+            node.members.push(deserializeMethod);
+            console.log(this.deserializeFunc);
+        }
 
         this.schemasList.push(this.currentClass);
     }
