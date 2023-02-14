@@ -9,6 +9,9 @@ class Vec3 {
     @inline get __TBS_ByteLength(): i32 {
         return 3;
     }
+    @inline __TBS_Instantiate(): Vec3 {
+        return new Vec3();
+    }
 }
 
 @serializable
@@ -20,6 +23,13 @@ class Position {
     data!: Array<u8>;
     @inline get __TBS_ByteLength(): i32 {
         return 6 + this.data.length + (this.name.length << 1) + this.pos.__TBS_ByteLength;
+    }
+    @inline __TBS_Instantiate(): Position {
+        const res = new Position();
+        res.name = "";
+        res.pos = new Vec3();
+        res.data = [];
+        return res;
     }
 }
 
@@ -47,11 +57,11 @@ vec.__TBS_Serialize(vec, serializedVec);
 
 console.log(Uint8Array.wrap(serializedVec).join(" "));
 
-const parsedVec: Vec3 = {
+const parsedVec = new Vec3();/*: Vec3 = {
     x: 0,
     y: 0,
     z: 0
-};
+};*/
 
 vec.__TBS_Deserialize(serializedVec, parsedVec);
 
@@ -63,7 +73,7 @@ pos.__TBS_Serialize(pos, serializedPos);
 
 console.log(Uint8Array.wrap(serializedPos).join(" "));
 
-const parsedPos = pos;
+const parsedPos = changetype<Position>(0).__TBS_Instantiate();
 
 pos.__TBS_Deserialize(serializedPos, parsedPos);
 
