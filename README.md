@@ -23,7 +23,7 @@ Benchmarks are taken with as-tral and results are located in [benchmark-results.
 
 TBS was made to enable the performant transfer of basic data types across i/o with minimal overhead and memory usage. The format is inspired by [Apache Avro](https://avro.apache.org/) and meant to provide both the ability to modify keys induvidually and support arbitrary ser/de. 
 
-## Setup
+## Setup (Not ready for general use!)
 
 ```bash
 ~ npm install JairusSW/as-tbs
