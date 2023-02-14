@@ -180,15 +180,10 @@ export namespace TBS {
                 // @ts-ignore
                 return parseArbitrary(data, load<u8>(changetype<usize>(data)));
             }
-            // @ts-ignore
-            const out: nonnull<T> = changetype<nonnull<T>>(__new(offsetof<nonnull<T>>(), idof<nonnull<T>>()));
-            // @ts-ignore
-            //const out = inst.__TBS_Instantiate();
-            //heap.free(changetype<usize>(inst));
-            // @ts-ignore
-            if (isDefined(out.__TBS_Deserialize)) {
-                // @ts-ignore
-                out.__TBS_Deserialize(data, out);
+            if (isDefined(changetype<nonnull<T>>(0).__TBS_Deserialize)) {
+                const out = changetype<nonnull<T>>(__new(offsetof<nonnull<T>>(), idof<nonnull<T>>()));
+                    // @ts-ignore
+                    out.__TBS_Deserialize(data, out);
                 return out;
             }
             return unreachable();
