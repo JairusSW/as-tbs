@@ -1,4 +1,4 @@
-import { Variant } from "as-variant/assembly";
+import { Variant } from "as-variant";
 import { getArrayDepth } from "./util";
 import { JSON } from "json-as";
 
@@ -182,8 +182,8 @@ export namespace TBS {
             }
             if (isDefined(changetype<nonnull<T>>(0).__TBS_Deserialize)) {
                 const out = changetype<nonnull<T>>(__new(offsetof<nonnull<T>>(), idof<nonnull<T>>()));
-                    // @ts-ignore
-                    out.__TBS_Deserialize(data, out);
+                // @ts-ignore
+                out.__TBS_Deserialize(data, out);
                 return out;
             }
             return unreachable();
@@ -272,7 +272,7 @@ export namespace TBS {
         }
     }
     @inline export function byteLength<T>(data: T): i32 {
-        
+
         if (isDefined(data.__TBS_ByteLength)) {
             return data.__TBS_ByteLength;
         } else if (data instanceof Array) {

@@ -1,0 +1,9 @@
+import "./Vec3.tbs"
+
+Position {
+    name: string
+    id: i8
+    pos: Vec3
+    moving: boolean
+    data: Array<u8>
+}
