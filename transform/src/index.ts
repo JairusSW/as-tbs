@@ -14,6 +14,7 @@ class SchemaData {
     public name: string = "";
     public serializeStmts: string[] = [];
     public deserializeStmts: string[] = [];
+    public instantiateStmts: string[] = [];
     public offset: number = 0;
 }
 
@@ -27,6 +28,8 @@ class TBSTransform extends BaseVisitor {
     // Make per-file and have TBS call the correct ser/de function
     public serializeFunc: string = "";
     public deserializeFunc: string = "";
+    public instantiateFunc: string = "";
+    public sizeFunc: string = "";
 
     public globalStatements: Statement[] = [];
 
@@ -54,6 +57,8 @@ class TBSTransform extends BaseVisitor {
 
         this.serializeFunc = `@inline __TBS_Serialize(input: ${className}, out: ArrayBuffer, offset: usize = 0): ArrayBuffer {\n`;
         this.deserializeFunc = `@inline __TBS_Deserialize(input: ArrayBuffer, out: ${className}, offset: usize = 0): ${className} {\n`;
+        this.instantiateFunc = `@inline __TBS_Instantiate(): ${className} {\n`;
+        this.sizeFunc = `@inline get __TBS_Size(): i32 {\n`;
 
         console.log("Visiting Class: " + className);
         this.currentClass = {
@@ -62,6 +67,7 @@ class TBSTransform extends BaseVisitor {
             types: [],
             serializeStmts: [],
             deserializeStmts: [],
+            instantiateStmts: [],
             offset: 0
         }
 
@@ -123,6 +129,7 @@ class TBSTransform extends BaseVisitor {
                 // TODO ^ This ONLY works for single byte arrays!!!
                 offset += 2;
                 offsetDyn += ` + <usize>dynamic.${key}.length`;
+                this.currentClass.instantiateStmts.push(`this.${key} = [];`);
                 //}
                 //}
             } else if (type == "string") {
@@ -133,6 +140,7 @@ class TBSTransform extends BaseVisitor {
                 deserializeStmts.push(`out.${key} = String.UTF16.decodeUnsafe(changetype<usize>(input) + offset + <usize>${offset + 2}${offsetDyn}, load<u16>(changetype<usize>(input) + offset + <usize>${offset + offsetDyn}) << 1);`);
                 offset += 2;
                 offsetDyn += ` + <usize>(dynamic.${key}.length << 1)`;
+                this.currentClass.instantiateStmts.push(`this.${key} = "";`);
                 //}
                 //}
             } else if (this.schemasList.filter(v => v.name == type).length) {
@@ -142,6 +150,7 @@ class TBSTransform extends BaseVisitor {
                 //deserializeStmts.push(`out.${key} = changetype<nonnull<${type}>>(__new(offsetof<nonnull<${type}>>(), idof<nonnull<${type}>>()));`);
                 deserializeStmts.push(`out.${key}.__TBS_Deserialize(input, out.${key}, ${offset});`);
                 offset += ctx!.offset;
+                this.currentClass.instantiateStmts.push(`this.${key} = new ${type}();`);
             }
         }
 
@@ -158,15 +167,26 @@ class TBSTransform extends BaseVisitor {
             this.serializeFunc += "\t\t" + serStmt + "\n"
         }
 
-        this.serializeFunc += "\t\treturn out;\n}";
+        this.serializeFunc += "\treturn out;\n}";
 
         for (const derStmt of this.currentClass.deserializeStmts) {
             this.deserializeFunc += "\t\t" + derStmt + "\n"
         }
-        this.deserializeFunc += "\t\treturn out;\n}";
+        this.deserializeFunc += "\treturn out;\n}";
+
+        for (const instStmt of this.currentClass.instantiateStmts) {
+            this.instantiateFunc += "\t\t" + instStmt + "\n"
+        }
+        this.instantiateFunc += "\treturn this;\n}";
+
+        this.sizeFunc += "\treturn " + this.currentClass.offset;
+        if (offsetDyn.length) this.sizeFunc += offsetDyn.replaceAll("dynamic", "this").replaceAll("<usize>", "");
+        this.sizeFunc += ";\n}";
 
         const serializeMethod = SimpleParser.parseClassMember(this.serializeFunc, node);
         const deserializeMethod = SimpleParser.parseClassMember(this.deserializeFunc, node);
+        const instantiateMethod = SimpleParser.parseClassMember(this.instantiateFunc, node);
+        const sizeMethod = SimpleParser.parseClassMember(this.sizeFunc, node);
 
         if (!node.members.find(v => v.name.text == "__TBS_Serialize")) {
             node.members.push(serializeMethod);
@@ -176,6 +196,16 @@ class TBSTransform extends BaseVisitor {
         if (!node.members.find(v => v.name.text == "__TBS_Deserialize")) {
             node.members.push(deserializeMethod);
             console.log(this.deserializeFunc);
+        }
+
+        if (!node.members.find(v => v.name.text == "__TBS_Instantiate")) {
+            node.members.push(instantiateMethod);
+            console.log(this.instantiateFunc);
+        }
+
+        if (!node.members.find(v => v.name.text == "__TBS_Size")) {
+            node.members.push(sizeMethod);
+            console.log(this.sizeFunc);
         }
 
         this.schemasList.push(this.currentClass);

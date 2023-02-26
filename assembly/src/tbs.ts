@@ -271,8 +271,8 @@ export namespace TBS {
     }
     @inline export function byteLength<T>(data: T): i32 {
 
-        if (isDefined(data.__TBS_ByteLength)) {
-            return data.__TBS_ByteLength;
+        if (isDefined(data.__TBS_Size)) {
+            return data.__TBS_Size;
         } else if (data instanceof Array) {
             arrByteLen = 0;
             arrayByteLength(data);

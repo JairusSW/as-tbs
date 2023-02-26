@@ -4,7 +4,7 @@ class Vec3 {
     x!: i8;
     y!: i8;
     z!: i8;
-    @inline get __TBS_ByteLength(): i32 {
+    @inline get __TBS_Size(): i32 {
         return 3;
     }
     @inline __TBS_Serialize(input: Vec3, out: ArrayBuffer, offset: usize = 0): ArrayBuffer {
@@ -27,8 +27,8 @@ class Position {
     pos!: Vec3;
     moving!: boolean;
     data!: Array<u8>;
-    @inline get __TBS_ByteLength(): i32 {
-        return 6 + this.data.length + (this.name.length << 1) + this.pos.__TBS_ByteLength;
+    @inline get __TBS_Size(): i32 {
+        return 6 + this.data.length + (this.name.length << 1) + this.pos.__TBS_Size;
     }
     @inline __TBS_Serialize(input: Position, out: ArrayBuffer, offset: usize = 0): ArrayBuffer {
         store<boolean>(changetype<usize>(out) + offset, input.moving);
@@ -81,9 +81,9 @@ const vec: Vec3 = {
     z: 8
 };
 
-const serializedVec3 = new ArrayBuffer(vec.__TBS_ByteLength);
+const serializedVec3 = new ArrayBuffer(vec.__TBS_Size);
 vec.__TBS_Serialize(vec, serializedVec3);
-const serializedPos = new ArrayBuffer(pos.__TBS_ByteLength);
+const serializedPos = new ArrayBuffer(pos.__TBS_Size);
 pos.__TBS_Serialize(pos, serializedPos);
 const serializedI32 = blackbox(TBS.serialize<i32>(314));
 const serializedString = blackbox(TBS.serialize<string>("hello"));
