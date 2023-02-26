@@ -156,7 +156,7 @@ export namespace TBS {
         }
     }
     // @ts-ignore
-    @inline export function parse<T>(buffer: ArrayBuffer, data: nonnull<T> | null, offset: i32 = 0): T {
+    @inline export function parse<T>(buffer: ArrayBuffer, data: T | null = null, offset: i32 = 0): T {
         if (isString<T>()) {
             // @ts-ignore
             const out = changetype<String>(__new(buffer.byteLength - 1, idof<String>()));
@@ -180,7 +180,7 @@ export namespace TBS {
                 return parseArbitrary(buffer, load<u8>(changetype<usize>(buffer)));
                 // @ts-ignore
             } else if (isDefined(changetype<nonnull<T>>(0).__TBS_Deserialize)) {
-                const out = data ? data : changetype<nonnull<T>>(__new(offsetof<nonnull<T>>(), idof<nonnull<T>>()));
+                const out = data ? data : changetype<nonnull<T>>(__new(offsetof<nonnull<T>>(), idof<nonnull<T>>())).__TBS_Instantiate();
                 // @ts-ignore
                 out.__TBS_Deserialize(buffer, out);
                 return out;

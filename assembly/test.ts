@@ -37,26 +37,26 @@ const pos: Position = {
     name: "p1"
 };
 
-const serializedVec = new ArrayBuffer(TBS.sizeOf<Vec3>(vec));
+const serializedVec = TBS.serialize(vec);//new ArrayBuffer(TBS.sizeOf<Vec3>(vec));
 
-TBS.serialize(vec, serializedVec);
+//TBS.serialize(vec, serializedVec);
 
 console.log(Uint8Array.wrap(serializedVec).join(" "));
 
-const parsedVec = new Vec3();
+const parsedVec = TBS.parse<Vec3>(serializedVec);//new Vec3();
 
-TBS.parse<Vec3>(serializedVec, parsedVec);
+//TBS.parse<Vec3>(serializedVec, parsedVec);
 
 console.log(JSON.stringify(parsedVec));
 
-const serializedPos = new ArrayBuffer(TBS.sizeOf<Position>(pos));
+const serializedPos = TBS.serialize(pos);//new ArrayBuffer(TBS.sizeOf<Position>(pos));
 
-TBS.serialize(pos, serializedPos);
+//TBS.serialize(pos, serializedPos);
 
 console.log(Uint8Array.wrap(serializedPos).join(" "));
 
-const parsedPos = new Position().__TBS_Instantiate();
+const parsedPos = TBS.parse<Position>(serializedPos);//new Position().__TBS_Instantiate();
 
-TBS.parse<Position>(serializedPos, parsedPos);
+//TBS.parse<Position>(serializedPos, parsedPos);
 
 console.log(JSON.stringify(parsedPos));
