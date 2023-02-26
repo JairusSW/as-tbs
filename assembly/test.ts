@@ -1,4 +1,5 @@
 import { JSON } from "json-as";
+import { TBS } from "./src/tbs";
 
 @json
 @tbs
@@ -36,26 +37,26 @@ const pos: Position = {
     name: "p1"
 };
 
-const serializedVec = new ArrayBuffer(vec.__TBS_Size);
+const serializedVec = new ArrayBuffer(TBS.sizeOf<Vec3>(vec));
 
-vec.__TBS_Serialize(vec, serializedVec);
+TBS.serialize(vec, serializedVec);
 
 console.log(Uint8Array.wrap(serializedVec).join(" "));
 
 const parsedVec = new Vec3();
 
-vec.__TBS_Deserialize(serializedVec, parsedVec);
+TBS.parse<Vec3>(serializedVec, parsedVec);
 
 console.log(JSON.stringify(parsedVec));
 
-const serializedPos = new ArrayBuffer(pos.__TBS_Size);
+const serializedPos = new ArrayBuffer(TBS.sizeOf<Position>(pos));
 
-pos.__TBS_Serialize(pos, serializedPos);
+TBS.serialize(pos, serializedPos);
 
 console.log(Uint8Array.wrap(serializedPos).join(" "));
 
 const parsedPos = new Position().__TBS_Instantiate();
 
-pos.__TBS_Deserialize(serializedPos, parsedPos);
+TBS.parse<Position>(serializedPos, parsedPos);
 
 console.log(JSON.stringify(parsedPos));

@@ -53,44 +53,44 @@ export namespace TBS {
         ArrayDimStruct = 42
     }
     // @ts-ignore
-    @inline export function serialize<T>(data: T): ArrayBuffer {
+    @inline export function serialize<T>(data: T, buffer: ArrayBuffer | null = null, offset: i32 = 0): ArrayBuffer {
         if (isString<T>()) {
             // UTF-16 String
-            const out = new ArrayBuffer(((<string>data).length << 1) + 1);
+            const out = buffer ? buffer : new ArrayBuffer(((<string>data).length << 1) + 1);
             serializeTo(data, out);
             return out;
         } else if (isBoolean<T>()) {
-            const out = new ArrayBuffer(1);
+            const out = buffer ? buffer : new ArrayBuffer(1);
             serializeTo(data, out);
             return out;
         } else if (data instanceof i8 || data instanceof u8) {
-            const out = new ArrayBuffer(1);
+            const out = buffer ? buffer : new ArrayBuffer(1);
             serializeTo(data, out);
             return out;
         } else if (data instanceof i16 || data instanceof u16) {
-            const out = new ArrayBuffer(2);
+            const out = buffer ? buffer : new ArrayBuffer(2);
             serializeTo(data, out);
             return out;
         } else if (data instanceof i32 || data instanceof u32) {
-            const out = new ArrayBuffer(4);
+            const out = buffer ? buffer : new ArrayBuffer(4);
             serializeTo(data, out);
             return out;
         } else if (data instanceof i64 || data instanceof I64 || data instanceof u64 || data instanceof U64) {
-            const out = new ArrayBuffer(8);
+            const out = buffer ? buffer : new ArrayBuffer(8);
             serializeTo(data, out);
             return out;
         } else if (data instanceof f32 || data instanceof F32) {
-            const out = new ArrayBuffer(4);
+            const out = buffer ? buffer : new ArrayBuffer(4);
             serializeTo(data, out);
             return out;
         } else if (data instanceof f64 || data instanceof F64) {
-            const out = new ArrayBuffer(8);
+            const out = buffer ? buffer : new ArrayBuffer(8);
             serializeTo(data, out);
             return out;
             // @ts-ignore
         } else if (isArray<T>()) {
             // @ts-ignore
-            const out = isArray<valueof<T>>() ? new ArrayBuffer(byteLength(data)) : new ArrayBuffer(data.length + 1);
+            const out = buffer ? buffer : (isArray<valueof<T>>() ? new ArrayBuffer(sizeOf(data)) : new ArrayBuffer(data.length + 1));
             // @ts-ignore
             serializeTo(data, out);
             // @ts-ignore
@@ -98,8 +98,9 @@ export namespace TBS {
             // @ts-ignore
         } else if (isDefined(data.__TBS_Serialize)) {
             // @ts-ignore
-            const out = new ArrayBuffer(byteLength(data));
-            serializeTo(data, out);
+            const out = buffer ? buffer : new ArrayBuffer(sizeOf(data));
+            // @ts-ignore
+            data.__TBS_Serialize(data, out, offset);
             return out;
         }
         return unreachable();
@@ -155,11 +156,11 @@ export namespace TBS {
         }
     }
     // @ts-ignore
-    @inline export function parse<T>(data: ArrayBuffer): T {
+    @inline export function parse<T>(buffer: ArrayBuffer, data: nonnull<T> | null, offset: i32 = 0): T {
         if (isString<T>()) {
             // @ts-ignore
-            const out = changetype<String>(__new(data.byteLength - 1, idof<String>()));
-            parseTo(data, out);
+            const out = changetype<String>(__new(buffer.byteLength - 1, idof<String>()));
+            parseTo(buffer, out);
             // @ts-ignore
             return out;
             // @ts-ignore
@@ -167,8 +168,8 @@ export namespace TBS {
             // @ts-ignore
             const deepType: valueof<T> = (isManaged<valueof<T>>() || isReference<valueof<T>>()) ? changetype<valueof<T>>(0) : 0;
             if (deepType instanceof u8) {
-                const out = new Array<u8>(data.byteLength - 1);
-                parseTo<u8[]>(data, out);
+                const out = new Array<u8>(buffer.byteLength - 1);
+                parseTo<u8[]>(buffer, out);
                 // @ts-ignore
                 return out;
             }
@@ -176,12 +177,12 @@ export namespace TBS {
         } else if (isManaged<T>() || isReference<T>()) {
             if (idof<T>() == idof<Variant>()) {
                 // @ts-ignore
-                return parseArbitrary(data, load<u8>(changetype<usize>(data)));
-            }
-            if (isDefined(changetype<nonnull<T>>(0).__TBS_Deserialize)) {
-                const out = changetype<nonnull<T>>(__new(offsetof<nonnull<T>>(), idof<nonnull<T>>()));
+                return parseArbitrary(buffer, load<u8>(changetype<usize>(buffer)));
                 // @ts-ignore
-                out.__TBS_Deserialize(data, out);
+            } else if (isDefined(changetype<nonnull<T>>(0).__TBS_Deserialize)) {
+                const out = data ? data : changetype<nonnull<T>>(__new(offsetof<nonnull<T>>(), idof<nonnull<T>>()));
+                // @ts-ignore
+                out.__TBS_Deserialize(buffer, out);
                 return out;
             }
             return unreachable();
@@ -269,16 +270,8 @@ export namespace TBS {
             out.__TBS_Deserialize(data, out);
         }
     }
-    @inline export function byteLength<T>(data: T): i32 {
-
-        if (isDefined(data.__TBS_Size)) {
-            return data.__TBS_Size;
-        } else if (data instanceof Array) {
-            arrByteLen = 0;
-            arrayByteLength(data);
-            return arrByteLen;
-        }
-        return unreachable();
+    @inline export function sizeOf<T>(data: T): i32 {
+        return data.__TBS_Size;
     }
 }
 
@@ -345,7 +338,7 @@ function parseArbitrary(data: ArrayBuffer, type: i32): Variant {
         if (type instanceof u8 || type instanceof i8) {
             store<u8>(changetype<usize>(out), TBS.ComplexTypes.ArrayDimU8);
             store<u8>(changetype<usize>(out) + <usize>1 + offset, depth);
-            store<u16>(changetype<usize>(out) + <usize>2 + offset, TBS.byteLength(data))
+            store<u16>(changetype<usize>(out) + <usize>2 + offset, TBS.sizeOf(data))
             for (let i = 0; i < data.length; i++) {
                 const arr = unchecked(data[i]);
                 store<u16>(changetype<usize>(out) + <usize>4 + offset, arr.length);

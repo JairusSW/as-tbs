@@ -50,7 +50,7 @@ Or, add it to `asconfig.json`
 ## Usage
 
 ```js
-import { TBS, string8 } from "as-tbs/assembly";
+import { TBS } from "as-tbs/assembly";
 //            ^ UTF-8 string type
 
 // If you add JSON, don't add the @json decorator. @serializable works here.
