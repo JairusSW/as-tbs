@@ -1,6 +1,5 @@
 import { Variant } from "as-variant/assembly";
 
-export type string8 = string;
 export namespace TBS {
     export enum Types {
         u8 = 1,
@@ -57,37 +56,10 @@ export namespace TBS {
         if (isString<T>()) {
             // UTF-16 String
             const out = buffer ? buffer : new ArrayBuffer(((<string>data).length << 1) + 1);
-            serializeTo(data, out);
+            // UTF-16 String
+            store<u8>(changetype<usize>(out) + offset, Types.StringU16);
+            memory.copy(changetype<usize>(out) + offset + <usize>1, changetype<usize>(data), (<string>data).length << 1);
             return out;
-        } else if (isBoolean<T>()) {
-            const out = buffer ? buffer : new ArrayBuffer(1);
-            serializeTo(data, out);
-            return out;
-        } else if (data instanceof i8 || data instanceof u8) {
-            const out = buffer ? buffer : new ArrayBuffer(1);
-            serializeTo(data, out);
-            return out;
-        } else if (data instanceof i16 || data instanceof u16) {
-            const out = buffer ? buffer : new ArrayBuffer(2);
-            serializeTo(data, out);
-            return out;
-        } else if (data instanceof i32 || data instanceof u32) {
-            const out = buffer ? buffer : new ArrayBuffer(4);
-            serializeTo(data, out);
-            return out;
-        } else if (data instanceof i64 || data instanceof I64 || data instanceof u64 || data instanceof U64) {
-            const out = buffer ? buffer : new ArrayBuffer(8);
-            serializeTo(data, out);
-            return out;
-        } else if (data instanceof f32 || data instanceof F32) {
-            const out = buffer ? buffer : new ArrayBuffer(4);
-            serializeTo(data, out);
-            return out;
-        } else if (data instanceof f64 || data instanceof F64) {
-            const out = buffer ? buffer : new ArrayBuffer(8);
-            serializeTo(data, out);
-            return out;
-            // @ts-ignore
         } else if (isArray<T>()) {
             // @ts-ignore
             const out = buffer ? buffer : (isArray<valueof<T>>() ? new ArrayBuffer(sizeOf(data)) : new ArrayBuffer(data.length + 1));
@@ -105,75 +77,16 @@ export namespace TBS {
         }
         return unreachable();
     }
-    /**
-     * Serialize TBS-encoded data to a certain location and offset in memory.
-     * Potentially unsafe as there is no bounds-checking within.
-     * @param data Data to serialize
-     * @param out ArrayBuffer to write to
-     * @param offset Offset to write to
-     * @returns void
-     * @fail Does nothing on faliure
-     */
-    // @ts-ignore
-    @inline export function serializeTo<T>(data: T, out: ArrayBuffer, offset: usize = 0): void {
-        if (isString<T>()) {
-            // UTF-16 String
-            store<u8>(changetype<usize>(out) + offset, Types.StringU8);
-            //memory.copy(changetype<usize>(out) + offset + <usize>1, changetype<usize>(data), (<string>data).length << 1);
-            store<ArrayBuffer>(changetype<usize>(out) + 1, changetype<ArrayBuffer>(data));
-        } else if (isBoolean<T>()) {
-            store<bool>(changetype<usize>(out) + offset, <bool>data);
-        } else if (data instanceof u8) {
-            store<u8>(changetype<usize>(out) + offset, <u8>data);
-        } else if (data instanceof i8) {
-            store<i8>(changetype<usize>(out) + offset, <i8>data);
-        } else if (data instanceof u16) {
-            store<u16>(changetype<usize>(out) + offset, <u16>data);
-        } else if (data instanceof i16) {
-            store<i16>(changetype<usize>(out) + offset, <i16>data);
-        } else if (data instanceof u32) {
-            store<u32>(changetype<usize>(out) + offset, <u32>data);
-        } else if (data instanceof i32) {
-            store<i32>(changetype<usize>(out) + offset, <i32>data);
-        } else if (data instanceof u64) {
-            store<u64>(changetype<usize>(out) + offset, <u64>data);
-        } else if (data instanceof i64) {
-            store<i64>(changetype<usize>(out) + offset, <i64>data);
-        } else if (data instanceof f32) {
-            store<f32>(changetype<usize>(out) + offset, <f32>data);
-        } else if (data instanceof f64) {
-            store<f64>(changetype<usize>(out) + offset, <f64>data);
-            // @ts-ignore
-        } else if (data instanceof Array) {
-            // @ts-ignore
-            if (isArray<valueof<T>>()) {
-                serializeDeepArray(data, out);
-            }
-            // @ts-ignore
-        } else if (isDefined(data.__TBS_Serialize)) {
-            // @ts-ignore
-            data.__TBS_Serialize(data, out);
-        }
-    }
     // @ts-ignore
     @inline export function parse<T>(buffer: ArrayBuffer, data: T | null = null, offset: i32 = 0): T {
         if (isString<T>()) {
             // @ts-ignore
             const out = changetype<String>(__new(buffer.byteLength - 1, idof<String>()));
-            parseTo(buffer, out);
+            // @ts-ignore
+            memory.copy(changetype<usize>(out), changetype<usize>(buffer) + offset + <usize>1, buffer.byteLength - 1);
             // @ts-ignore
             return out;
             // @ts-ignore
-        } else if (isArray<T>()) {
-            // @ts-ignore
-            const deepType: valueof<T> = (isManaged<valueof<T>>() || isReference<valueof<T>>()) ? changetype<valueof<T>>(0) : 0;
-            if (deepType instanceof u8) {
-                const out = new Array<u8>(buffer.byteLength - 1);
-                parseTo<u8[]>(buffer, out);
-                // @ts-ignore
-                return out;
-            }
-            return unreachable();
         } else if (isManaged<T>() || isReference<T>()) {
             if (idof<T>() == idof<Variant>()) {
                 // @ts-ignore
@@ -190,87 +103,8 @@ export namespace TBS {
             return unreachable();
         }
     }
-    /**
-     * Deserialize TBS-encoded data from a certain location and offset in memory.
-     * Potentially unsafe as there is no bounds-checking within.
-     * @param data ArrayBuffer to deserialize
-     * @param out Data structure to write to
-     * @param offset Offset to read from
-     * @returns void
-     * @fail Does nothing on faliure
-    */
-    // @ts-ignore
-    @inline export function parseTo<T>(data: ArrayBuffer, out: T, offset: usize = 0): void {
-        if (isString<T>()) {
-            memory.copy(changetype<usize>(out), changetype<usize>(data) + offset + <usize>1, data.byteLength - 1);
-            // @ts-ignore
-        } else if (isBoolean<T>()) {
-            // @ts-ignore
-            return load<boolean>(changetype<usize>(data));
-        } else if (isInteger<T>() || isFloat<T>()) {
-            // @ts-ignore
-            const type: T = 0;
-            if (type instanceof u8) {
-                // @ts-ignore
-                return load<u8>(changetype<usize>(data) + offset + <usize>1);
-            } else if (type instanceof i8) {
-                // @ts-ignore
-                return load<i8>(changetype<usize>(data) + offset + <usize>1);
-            } else if (type instanceof u8) {
-                // @ts-ignore
-                return load<u8>(changetype<usize>(data) + offset + <usize>1);
-            } else if (type instanceof u16) {
-                // @ts-ignore
-                return load<u16>(changetype<usize>(data) + offset + <usize>1);
-            } else if (type instanceof i16) {
-                // @ts-ignore
-                return load<i16>(changetype<usize>(data) + offset + <usize>1);
-            } else if (type instanceof u32) {
-                // @ts-ignore
-                return load<u32>(changetype<usize>(data) + offset + <usize>1);
-            } else if (type instanceof i32) {
-                // @ts-ignore
-                return load<i32>(changetype<usize>(data) + offset + <usize>1);
-            } else if (type instanceof f32) {
-                // @ts-ignore
-                return load<f32>(changetype<usize>(data) + offset + <usize>1);
-            } else if (type instanceof u64) {
-                // @ts-ignore
-                return load<u64>(changetype<usize>(data) + offset + <usize>1);
-            } else if (type instanceof i64) {
-                // @ts-ignore
-                return load<i64>(changetype<usize>(data) + offset + <usize>1);
-            } else if (type instanceof f64) {
-                // @ts-ignore
-                return load<f64>(changetype<usize>(data) + offset + <usize>1);
-            }
-        } else if (isArray<T>()) {
-            // @ts-ignore
-            const deepType: valueof<T> = (isManaged<valueof<T>>() || isReference<valueof<T>>()) ? changetype<valueof<T>>(0) : 0;
-            if (deepType instanceof u8 || deepType instanceof i8) {
-                // @ts-ignore
-                memory.copy(changetype<usize>(out.buffer), changetype<usize>(data) + offset + <usize>1, data.byteLength - 1);
-                return;
-            } else if (deepType instanceof u16 || deepType instanceof i16) {
-                // @ts-ignore
-                memory.copy(changetype<usize>(out.buffer), changetype<usize>(data) + offset + <usize>1, (data.byteLength - 1) << 1);
-                return;
-            } else if (deepType instanceof u32 || deepType instanceof i32 || deepType instanceof f32) {
-                // @ts-ignore
-                memory.copy(changetype<usize>(out.buffer), changetype<usize>(data) + offset + <usize>1, (data.byteLength - 1) << 2);
-                return;
-            } else if (deepType instanceof u64 || deepType instanceof i64 || deepType instanceof f64) {
-                // @ts-ignore
-                memory.copy(changetype<usize>(out.buffer), changetype<usize>(data) + offset + <usize>1, (data.byteLength - 1) << 3);
-                return;
-            }
-            // @ts-ignore
-        } else if (isDefined(out.__TBS_Deserialize)) {
-            // @ts-ignore
-            out.__TBS_Deserialize(data, out);
-        }
-    }
     @inline export function sizeOf<T>(data: T): i32 {
+        // @ts-ignore
         return data.__TBS_Size;
     }
 }

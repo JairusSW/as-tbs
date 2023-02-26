@@ -37,6 +37,10 @@ const pos: Position = {
     name: "p1"
 };
 
+console.log(Uint8Array.wrap(String.UTF16.encode("hello")).join(" "));
+console.log(Uint8Array.wrap(TBS.serialize("hello")).join(" "));
+console.log(TBS.parse<string>(TBS.serialize("hello")))
+
 const serializedVec = TBS.serialize(vec);//new ArrayBuffer(TBS.sizeOf<Vec3>(vec));
 
 //TBS.serialize(vec, serializedVec);
