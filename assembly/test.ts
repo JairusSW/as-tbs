@@ -41,6 +41,14 @@ console.log(Uint8Array.wrap(String.UTF16.encode("hello")).join(" "));
 console.log(Uint8Array.wrap(TBS.serialize("hello")).join(" "));
 console.log(TBS.parse<string>(TBS.serialize("hello")))
 
+console.log(Uint8Array.wrap(TBS.serialize<u8[]>([1, 2, 3, 4, 5])).join(" "));
+
+console.log(Uint8Array.wrap(TBS.serialize<u16[]>([1, 2, 3, 4, 5])).join(" "));
+
+console.log(JSON.stringify(TBS.parse<u8[]>(TBS.serialize<u8[]>([1, 2, 3, 4, 5]))));
+
+console.log(JSON.stringify(TBS.parse<u16[]>(TBS.serialize<u16[]>([1, 2, 3, 4, 5]))));
+
 const serializedVec = TBS.serialize(vec);//new ArrayBuffer(TBS.sizeOf<Vec3>(vec));
 
 //TBS.serialize(vec, serializedVec);

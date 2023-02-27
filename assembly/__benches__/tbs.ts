@@ -44,6 +44,7 @@ const vec: Vec3 = {
     z: 8
 };
 
+
 const serializedVec3 = new ArrayBuffer(TBS.sizeOf<Vec3>(vec));
 const serializedPos = new ArrayBuffer(TBS.sizeOf<Position>(pos));
 const serializedString = blackbox(TBS.serialize<string>("hello"));

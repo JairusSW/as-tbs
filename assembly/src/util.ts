@@ -1,3 +1,5 @@
+import { TBS } from "./tbs";
+
 // @ts-ignore
 @inline export function unsafeCharCodeAt(data: string, pos: i32): i32 {
     return load<u16>(changetype<usize>(data) + ((<usize>pos) << 1));
@@ -92,4 +94,30 @@ export function getArrayDepth<T>(depth: i32 = 1): i32 {
   } else {
     return depth;
   }
+}
+
+export function typeToID<T>(): TBS.Types {
+  switch (idof<T>()) {
+    case idof<i8[]>(): return TBS.Types.ArrayI8;
+    case idof<u8[]>(): return TBS.Types.ArrayU8;
+    case idof<i16[]>(): return TBS.Types.ArrayI16;
+    case idof<u16[]>(): return TBS.Types.ArrayU16;
+    case idof<i32[]>(): return TBS.Types.ArrayI32;
+    case idof<u32[]>(): return TBS.Types.ArrayU32;
+    case idof<i64[]>(): return TBS.Types.ArrayI64;
+    case idof<u64[]>(): return TBS.Types.ArrayU64;
+    case idof<f32[]>(): return TBS.Types.ArrayF32;
+    case idof<f64[]>(): return TBS.Types.ArrayF64;
+    default: return unreachable();
+  }
+}
+
+@inline export function instantiateArrayWithBuffer<T extends Array<any>>(buffer: ArrayBuffer, offset: usize, byteLength: i32): T {
+  const buf = buffer.slice(offset, offset + byteLength);
+  const arr = changetype<T>(__new(offsetof<T>(), idof<T>()));
+  store<usize>(changetype<usize>(arr), changetype<usize>(buf), offsetof<T>("dataStart"));
+  arr.byteLength = byteLength;
+  arr.buffer = buf;
+  arr.length = byteLength;
+  return arr;
 }

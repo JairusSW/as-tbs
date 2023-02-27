@@ -1,4 +1,5 @@
 import { Variant } from "as-variant/assembly";
+import { instantiateArrayWithBuffer, typeToID } from "./util";
 
 export namespace TBS {
     export enum Types {
@@ -59,10 +60,10 @@ export namespace TBS {
             return out;
         } else if (isArray<T>()) {
             // @ts-ignore
-            const out = buffer ? buffer : (isArray<valueof<T>>() ? new ArrayBuffer(sizeOf(data)) : new ArrayBuffer(data.length + 1));
+            const out = buffer ? buffer : (isArray<valueof<T>>() ? new ArrayBuffer(sizeOf(data)) : new ArrayBuffer((data.buffer.byteLength)));
+            //store<u8>(changetype<usize>(out) + offset, typeToID<T>());
             // @ts-ignore
-            //serializeTo(data, out);
-            // @ts-ignore
+            memory.copy(changetype<usize>(out) + offset, changetype<usize>(data.buffer), data.buffer.byteLength);
             return out;
             // @ts-ignore
         } else if (isDefined(data.__TBS_Serialize)) {
@@ -84,6 +85,16 @@ export namespace TBS {
             // @ts-ignore
             return out;
             // @ts-ignore
+        } else if (isArray<T>()) {
+            const arr = data ? data : changetype<T>(__new(offsetof<T>(), idof<T>()));
+            store<usize>(changetype<usize>(arr), changetype<usize>(buffer), offsetof<T>("dataStart"));
+            // @ts-ignore
+            arr.byteLength = buffer.byteLength;
+            // @ts-ignore
+            arr.buffer = buffer;
+            // @ts-ignore
+            arr.length = buffer.byteLength / sizeof<valueof<T>>();
+            return arr;
         } else if (isManaged<T>() || isReference<T>()) {
             if (idof<T>() == idof<Variant>()) {
                 // @ts-ignore
