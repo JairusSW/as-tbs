@@ -1,5 +1,4 @@
 import { Variant } from "as-variant/assembly";
-import { instantiateArrayWithBuffer, typeToID } from "./util";
 
 export namespace TBS {
     export enum Types {

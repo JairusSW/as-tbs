@@ -3,6 +3,7 @@ import { TBS } from "./src/tbs";
 
 @json
 @tbs
+// Binary Schema: [i8]
 class Vec3 {
     x!: i8;
     y!: i8;
