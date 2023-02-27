@@ -1,0 +1,121 @@
+Compiling assembly/__benches__/tbs.ts
+Visiting Class: Vec3
+type: i8
+type: i8
+type: i8
+[ 'x', 'y', 'z' ] [ 'i8', 'i8', 'i8' ] [ 166931, 166932, 166933 ]
+[
+  'store<i8>(changetype<usize>(out) + offset, input.x);',
+  'store<i8>(changetype<usize>(out) + offset + <usize>1, input.y);',
+  'store<i8>(changetype<usize>(out) + offset + <usize>2, input.z);'
+]
+[
+  'out.x = load<i8>(changetype<usize>(input) + offset);',
+  'out.y = load<i8>(changetype<usize>(input) + offset + <usize>1);',
+  'out.z = load<i8>(changetype<usize>(input) + offset + <usize>2);'
+]
+@inline __TBS_Serialize(input: Vec3, out: ArrayBuffer, offset: usize = 0): ArrayBuffer {
+		store<i8>(changetype<usize>(out) + offset, input.x);
+		store<i8>(changetype<usize>(out) + offset + <usize>1, input.y);
+		store<i8>(changetype<usize>(out) + offset + <usize>2, input.z);
+	return out;
+}
+@inline __TBS_Deserialize(input: ArrayBuffer, out: Vec3, offset: usize = 0): Vec3 {
+		out.x = load<i8>(changetype<usize>(input) + offset);
+		out.y = load<i8>(changetype<usize>(input) + offset + <usize>1);
+		out.z = load<i8>(changetype<usize>(input) + offset + <usize>2);
+	return out;
+}
+@inline __TBS_Instantiate(): Vec3 {
+	return this;
+}
+@inline get __TBS_Size(): i32 {
+	return 3;
+}
+Visiting Class: Position
+type: boolean
+type: i8
+type: Vec3
+type: Array<u8>
+type: string
+[ 'moving', 'id', 'pos', 'data', 'name' ] [ 'boolean', 'i8', 'Vec3', 'Array<u8>', 'string' ] [ -1414584941, 5174496, 160416559, 677575215, 677872912 ]
+[
+  'store<boolean>(changetype<usize>(out) + offset, input.moving);',
+  'store<i8>(changetype<usize>(out) + offset + <usize>1, input.id);',
+  'input.pos.__TBS_Serialize(input.pos, out, 2);',
+  'store<u16>(changetype<usize>(out) + offset + <usize>5, input.data.length);',
+  'memory.copy(changetype<usize>(out) + offset + <usize>7, changetype<usize>(input.data.buffer), input.data.length);',
+  'store<u16>(changetype<usize>(out) + offset + <usize>7 + <usize>input.data.length, input.name.length);',
+  'memory.copy(changetype<usize>(out) + offset + <usize>9 + <usize>input.data.length, changetype<usize>(input.name), input.name.length << 1);'
+]
+[
+  'out.moving = load<boolean>(changetype<usize>(input) + offset);',
+  'out.id = load<i8>(changetype<usize>(input) + offset + <usize>1);',
+  'out.pos.__TBS_Deserialize(input, out.pos, 2);',
+  'out.data.buffer = input.slice(offset + <usize>7, offset + <usize>7 + load<u16>(changetype<usize>(input) + offset + <usize>5));',
+  'store<usize>(changetype<usize>(out.data), changetype<usize>(out.data.buffer), offsetof<Array<u8>>("dataStart"));',
+  'out.data.byteLength = out.data.buffer.byteLength;',
+  'out.data.length = out.data.buffer.byteLength;',
+  'out.name = String.UTF16.decodeUnsafe(changetype<usize>(input) + offset + <usize>9 + <usize>out.data.length, load<u16>(changetype<usize>(input) + offset + <usize>7 + <usize>out.data.length) << 1);'
+]
+@inline __TBS_Serialize(input: Position, out: ArrayBuffer, offset: usize = 0): ArrayBuffer {
+		store<boolean>(changetype<usize>(out) + offset, input.moving);
+		store<i8>(changetype<usize>(out) + offset + <usize>1, input.id);
+		input.pos.__TBS_Serialize(input.pos, out, 2);
+		store<u16>(changetype<usize>(out) + offset + <usize>5, input.data.length);
+		memory.copy(changetype<usize>(out) + offset + <usize>7, changetype<usize>(input.data.buffer), input.data.length);
+		store<u16>(changetype<usize>(out) + offset + <usize>7 + <usize>input.data.length, input.name.length);
+		memory.copy(changetype<usize>(out) + offset + <usize>9 + <usize>input.data.length, changetype<usize>(input.name), input.name.length << 1);
+	return out;
+}
+@inline __TBS_Deserialize(input: ArrayBuffer, out: Position, offset: usize = 0): Position {
+		out.moving = load<boolean>(changetype<usize>(input) + offset);
+		out.id = load<i8>(changetype<usize>(input) + offset + <usize>1);
+		out.pos.__TBS_Deserialize(input, out.pos, 2);
+		out.data.buffer = input.slice(offset + <usize>7, offset + <usize>7 + load<u16>(changetype<usize>(input) + offset + <usize>5));
+		store<usize>(changetype<usize>(out.data), changetype<usize>(out.data.buffer), offsetof<Array<u8>>("dataStart"));
+		out.data.byteLength = out.data.buffer.byteLength;
+		out.data.length = out.data.buffer.byteLength;
+		out.name = String.UTF16.decodeUnsafe(changetype<usize>(input) + offset + <usize>9 + <usize>out.data.length, load<u16>(changetype<usize>(input) + offset + <usize>7 + <usize>out.data.length) << 1);
+	return out;
+}
+@inline __TBS_Instantiate(): Position {
+		this.pos = new Vec3();
+		this.data = [];
+		this.name = "";
+	return this;
+}
+@inline get __TBS_Size(): i32 {
+	return 9 + this.data.length + (this.name.length << 1);
+}
+
+Benchmarking Serialize Vec3: Warming up for 3000ms
+Benchmarking Serialize Vec3: Collecting 100 samples in estimated 5000ms (324M iterations)
+Benchmarking Serialize Vec3: Analyzing
+Serialize Vec3          time: [14.532ns 14.692ns 14.86ns]
+                        change: [-2.8156% -1.4746% -0.1559%] (p = 0.00 < 0.05)
+                        Change within noise threshold.
+Found 4 outliers among 100 measurements (4%)
+  4 (4%) high mild
+
+Benchmarking Parse Vec3: Warming up for 3000ms
+Benchmarking Parse Vec3: Collecting 100 samples in estimated 5000ms (367M iterations)
+Benchmarking Parse Vec3: Analyzing
+Parse Vec3              time: [13.524ns 13.633ns 13.762ns]
+                        change: [-4.1371% -2.4422% -0.5585%] (p = 0.00 < 0.05)
+                        Change within noise threshold.
+Found 6 outliers among 100 measurements (6%)
+  1 (1%) high mild
+  5 (5%) high severe
+
+Benchmarking Serialize Position: Warming up for 3000ms
+Benchmarking Serialize Position: Collecting 100 samples in estimated 5000.1ms (111M iterations)
+Benchmarking Serialize Position: Analyzing
+Serialize Position      time: [45.205ns 45.563ns 45.923ns]
+                        change: [-8.1428% -6.8758% -5.6797%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 1 outliers among 100 measurements (1%)
+  1 (1%) high mild
+
+Benchmarking Parse Position: Warming up for 3000ms
+Benchmarking Parse Position: Collecting 100 samples in estimated 5000.2ms (46M iterations)

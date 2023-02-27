@@ -14,9 +14,7 @@ export namespace TBS {
         f64 = 10,
         StringU8 = 11,
         StringU16 = 12,
-        Struct = 13
-    }
-    export enum ComplexTypes {
+        Struct = 13,
         // Array Types
         // For integers, we include a sign bit because we want to support arbitrary ser/de.
         ArrayU8 = 14,
@@ -33,7 +31,6 @@ export namespace TBS {
         ArrayStringU8 = 25,
         ArrayStringU16 = 26,
         ArrayStruct = 27,
-
         // Dimensional Arrays
         ArrayDim = 28,
         ArrayDimU8 = 29,
@@ -64,7 +61,7 @@ export namespace TBS {
             // @ts-ignore
             const out = buffer ? buffer : (isArray<valueof<T>>() ? new ArrayBuffer(sizeOf(data)) : new ArrayBuffer(data.length + 1));
             // @ts-ignore
-            serializeTo(data, out);
+            //serializeTo(data, out);
             // @ts-ignore
             return out;
             // @ts-ignore
@@ -81,7 +78,7 @@ export namespace TBS {
     @inline export function parse<T>(buffer: ArrayBuffer, data: T | null = null, offset: i32 = 0): T {
         if (isString<T>()) {
             // @ts-ignore
-            const out = changetype<String>(__new(buffer.byteLength - 1, idof<String>()));
+            const out = data ? data : changetype<String>(__new(buffer.byteLength - 1, idof<String>()));
             // @ts-ignore
             memory.copy(changetype<usize>(out), changetype<usize>(buffer) + offset + <usize>1, buffer.byteLength - 1);
             // @ts-ignore
@@ -93,7 +90,7 @@ export namespace TBS {
                 return parseArbitrary(buffer, load<u8>(changetype<usize>(buffer)));
                 // @ts-ignore
             } else if (isDefined(changetype<nonnull<T>>(0).__TBS_Deserialize)) {
-                const out = data ? data : changetype<nonnull<T>>(__new(offsetof<nonnull<T>>(), idof<nonnull<T>>())).__TBS_Instantiate();
+                const out = data ? data! : changetype<nonnull<T>>(__new(offsetof<nonnull<T>>(), idof<nonnull<T>>())).__TBS_Instantiate();
                 // @ts-ignore
                 out.__TBS_Deserialize(buffer, out);
                 return out;
@@ -109,6 +106,7 @@ export namespace TBS {
     }
 }
 
+/*
 // @ts-ignore
 function parseArbitrary(data: ArrayBuffer, type: i32): Variant {
     switch (type) {
@@ -118,34 +116,34 @@ function parseArbitrary(data: ArrayBuffer, type: i32): Variant {
         } case TBS.Types.StringU16: {
             // @ts-ignore
             return Variant.from<string>(TBS.parse<string>(data));
-        } case TBS.ComplexTypes.ArrayU8: {
+        } case TBS.Types.ArrayU8: {
             // @ts-ignore
             return Variant.from<u8[]>(TBS.parse<u8[]>(data));
-        } case TBS.ComplexTypes.ArrayI8: {
+        } case TBS.Types.ArrayI8: {
             // @ts-ignore
             return Variant.from<i8[]>(TBS.parse<i8[]>(data));
-        } case TBS.ComplexTypes.ArrayU16: {
+        } case TBS.Types.ArrayU16: {
             // @ts-ignore
             return Variant.from<u16[]>(TBS.parse<u16[]>(data));
-        } case TBS.ComplexTypes.ArrayI16: {
+        } case TBS.Types.ArrayI16: {
             // @ts-ignore
             return Variant.from<i16[]>(TBS.parse<i16[]>(data));
-        } case TBS.ComplexTypes.ArrayU32: {
+        } case TBS.Types.ArrayU32: {
             // @ts-ignore
             return Variant.from<u32[]>(TBS.parse<u32[]>(data));
-        } case TBS.ComplexTypes.ArrayI32: {
+        } case TBS.Types.ArrayI32: {
             // @ts-ignore
             return Variant.from<i32[]>(TBS.parse<i32[]>(data));
-        } case TBS.ComplexTypes.ArrayU64: {
+        } case TBS.Types.ArrayU64: {
             // @ts-ignore
             return Variant.from<u64[]>(TBS.parse<u64[]>(data));
-        } case TBS.ComplexTypes.ArrayI64: {
+        } case TBS.Types.ArrayI64: {
             // @ts-ignore
             return Variant.from<i64[]>(TBS.parse<i64[]>(data));
-        } case TBS.ComplexTypes.ArrayF32: {
+        } case TBS.Types.ArrayF32: {
             // @ts-ignore
             return Variant.from<f32[]>(TBS.parse<f32[]>(data));
-        } case TBS.ComplexTypes.ArrayF64: {
+        } case TBS.Types.ArrayF64: {
             // @ts-ignore
             return Variant.from<f64[]>(TBS.parse<f64[]>(data));
         }
@@ -160,7 +158,7 @@ function parseArbitrary(data: ArrayBuffer, type: i32): Variant {
         return Variant.from<i64>(load<i64>(changetype<usize>(data)));
     }
     return unreachable();
-}
+}*/
 
 // @ts-ignore
 @inline export function serializeDeepArray<T extends Array<any>>(data: T, out: ArrayBuffer, depth: usize = 1, offset: i32 = 0): void {
@@ -170,7 +168,7 @@ function parseArbitrary(data: ArrayBuffer, type: i32): Variant {
         const type: valueof<valueof<T>> = (isManaged<valueof<valueof<T>>>() || isReference<valueof<valueof<T>>>()) ? changetype<valueof<valueof<T>>>(0) : 0;
         // @ts-ignore
         if (type instanceof u8 || type instanceof i8) {
-            store<u8>(changetype<usize>(out), TBS.ComplexTypes.ArrayDimU8);
+            store<u8>(changetype<usize>(out), TBS.Types.ArrayDimU8);
             store<u8>(changetype<usize>(out) + <usize>1 + offset, depth);
             store<u16>(changetype<usize>(out) + <usize>2 + offset, TBS.sizeOf(data))
             for (let i = 0; i < data.length; i++) {

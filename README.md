@@ -17,15 +17,11 @@ Typed Binary Storage, also known as TBS is a schema-centered serialization forma
 - [Usage](#usage)
 - [Design](#design)
 
-## Benchmarks
-
-Benchmarks are taken with as-tral and results are located in [benchmark-results.txt](https://github.com/JairusSW/as-tbs/blob/master/benchmark-results.txt)
-
 ## Purpose
 
 TBS was made to enable the performant transfer of basic data types across i/o with minimal overhead and memory usage. The format is inspired by [Apache Avro](https://avro.apache.org/) and meant to provide both the ability to modify keys induvidually and support arbitrary ser/de. 
 
-## Setup (Not ready for general use!)
+## Setup
 
 ```bash
 ~ npm install JairusSW/as-tbs
@@ -51,9 +47,7 @@ Or, add it to `asconfig.json`
 
 ```js
 import { TBS } from "as-tbs/assembly";
-//            ^ UTF-8 string type
 
-// If you add JSON, don't add the @json decorator. @serializable works here.
 @serializable
 class Vec3 {
   x!: i8;
@@ -84,14 +78,17 @@ const pos: Position = {
   data: [1, 2, 3, 4, 5]
 };
 
-const serialized = TBS.serialize<Position>(pos);
-// This prints the binary data
-// console.log(Uint8Array.wrap(serialized).join(" "));
+const buffer = new ArrayBuffer(TBS.sizeOf<Position>(pos));
+// You can optionally write directly to a buffer at a offset.
+
+const serialized = TBS.serialize<Position>(pos, buffer);
+
 const parsed = TBS.parse<Position>(serialized);
-// Maybe add this to visualize data?
-// import { JSON } from "json-as/assembly";
-// console.log(JSON.stringify(parsed));
 ```
+
+## Benchmarks
+
+Benchmarks are taken with as-tral and results are located in [benchmark-results.txt](https://github.com/JairusSW/as-tbs/blob/master/benchmark-results.txt)
 
 ## Design
 
