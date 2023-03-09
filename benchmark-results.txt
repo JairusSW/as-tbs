@@ -37,6 +37,7 @@ type: boolean
 type: i8
 type: Vec3
 type: Array<u8>
+Array<u8>
 type: string
 [ 'moving', 'id', 'pos', 'data', 'name' ] [ 'boolean', 'i8', 'Vec3', 'Array<u8>', 'string' ] [ -1414584941, 5174496, 160416559, 677575215, 677872912 ]
 [
@@ -90,32 +91,33 @@ type: string
 }
 
 Benchmarking Serialize Vec3: Warming up for 3000ms
-Benchmarking Serialize Vec3: Collecting 100 samples in estimated 5000ms (324M iterations)
+Benchmarking Serialize Vec3: Collecting 100 samples in estimated 5000ms (323M iterations)
 Benchmarking Serialize Vec3: Analyzing
-Serialize Vec3          time: [14.532ns 14.692ns 14.86ns]
-                        change: [-2.8156% -1.4746% -0.1559%] (p = 0.00 < 0.05)
-                        Change within noise threshold.
-Found 4 outliers among 100 measurements (4%)
-  4 (4%) high mild
+Serialize Vec3          time: [15.137ns 15.257ns 15.394ns]
+                        change: [-3.9654% -2.6204% -1.2711%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 7 outliers among 100 measurements (7%)
+  6 (6%) high mild
+  1 (1%) high severe
 
 Benchmarking Parse Vec3: Warming up for 3000ms
-Benchmarking Parse Vec3: Collecting 100 samples in estimated 5000ms (367M iterations)
+Benchmarking Parse Vec3: Collecting 100 samples in estimated 5000ms (381M iterations)
 Benchmarking Parse Vec3: Analyzing
-Parse Vec3              time: [13.524ns 13.633ns 13.762ns]
-                        change: [-4.1371% -2.4422% -0.5585%] (p = 0.00 < 0.05)
-                        Change within noise threshold.
-Found 6 outliers among 100 measurements (6%)
-  1 (1%) high mild
-  5 (5%) high severe
+Parse Vec3              time: [14.796ns 15.046ns 15.311ns]
+                        change: [+2.5557% +4.0256% +5.5492%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 8 outliers among 100 measurements (8%)
+  8 (8%) high mild
 
 Benchmarking Serialize Position: Warming up for 3000ms
-Benchmarking Serialize Position: Collecting 100 samples in estimated 5000.1ms (111M iterations)
+Benchmarking Serialize Position: Collecting 100 samples in estimated 5000ms (113M iterations)
 Benchmarking Serialize Position: Analyzing
-Serialize Position      time: [45.205ns 45.563ns 45.923ns]
-                        change: [-8.1428% -6.8758% -5.6797%] (p = 0.00 < 0.05)
-                        Performance has improved.
-Found 1 outliers among 100 measurements (1%)
-  1 (1%) high mild
+Serialize Position      time: [44.721ns 45.53ns 46.597ns]
+                        change: [-2.2454% -0.9685% +0.4473%] (p = 0.00 < 0.05)
+                        Change within noise threshold.
+Found 7 outliers among 100 measurements (7%)
+  4 (4%) high mild
+  3 (3%) high severe
 
 Benchmarking Parse Position: Warming up for 3000ms
-Benchmarking Parse Position: Collecting 100 samples in estimated 5000.2ms (46M iterations)
+Benchmarking Parse Position: Collecting 100 samples in estimated 5000.5ms (34M iterations)
