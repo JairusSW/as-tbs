@@ -68,17 +68,19 @@ export class TBSGenerator {
                 fluidOffset += stmt.offset;
             }
         }
+        let id = 0;
         return {
             keyStmts: keyStmts,
             methodStmts: methodStmts,
-            methodText: `@inline __TBS_Deserialize(input: ArrayBuffer, out: ${schema.name}, offset: usize = 0): ${schema.name} {\n\t${methodStmts.join("\n\t")}\n}`,
-            keyText: `@inline __TBS_Deserialize_Key(input: ArrayBuffer, out: ${schema.name}, offset: usize = 0): ${schema.name} {\n\t${methodStmts.join("\n\t")}\n}`,
+            methodText: `@inline __TBS_Deserialize(input: ArrayBuffer, out: ${schema.name}, offset: usize = 0): ${schema.name} {\n    ${methodStmts.join("\n    ")}\n}`,
+            keyText: `@inline __TBS_Deserialize_Key(key: input: ArrayBuffer, out: ${schema.name}, offset: usize = 0): ${schema.name} {\n    ` + "switch (key) {\n        " + keyStmts.map(v => `    case ${id++}: {\n            ${v}\n            break;\n        }`).join("\n    "),
         };
     }
 }
 const generator = new TBSGenerator();
 const schema = new TBSSchema("Vec3", ["x", "y", "z"], [new TBSType("f32", []), new TBSType("f32", []), new TBSType("f32", [])]);
 const serializeMethod = generator.generateSerializeMethod(schema);
-console.log(serializeMethod.statements, serializeMethod.text);
+//console.log(serializeMethod.statements, serializeMethod.text);
 const deserializeMethod = generator.generateDeserializeMethods(schema);
-console.log(deserializeMethod.statements, deserializeMethod.text);
+console.log(deserializeMethod.keyStmts, deserializeMethod.keyText);
+console.log(deserializeMethod.methodStmts, deserializeMethod.methodText);

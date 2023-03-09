@@ -99,22 +99,16 @@ class TBSTransform extends BaseVisitor {
                 offset++;
             }
             else if (type == "StaticArray") {
-                //switch (typeDeep) {
-                //case "i8" || "u8" || "i16" || "u16" || "i32" || "u32": {
                 serializeStmts.push(`store<u16>(changetype<usize>(out) + offset + <usize>${offset + offsetDyn}, input.${key}.length);`);
                 serializeStmts.push(`memory.copy(changetype<usize>(out) + offset + <usize>${offset + 2}${offsetDyn}, changetype<usize>(input.${key}), input.${key}.length);`);
-                //deserializeStmts.push(`out.${key} = instantiate<${baseType}>(load<u8>(changetype<usize>(input) + offset + <usize>${offset + offsetDyn}));`)
                 deserializeStmts.push(`memory.copy(changetype<usize>(out.${key}), changetype<usize>(input) + offset + <usize>${offset + 2}${offsetDyn}, load<u16>(changetype<usize>(input) + offset + <usize>${offset + offsetDyn}));`);
                 offset += 2;
                 offsetDyn += ` + <usize>dynamic.${key}.length`;
-                //}
-                //}
             }
             else if (type.startsWith("Array") && type != "ArrayBuffer") {
                 console.log(type);
                 serializeStmts.push(`store<u16>(changetype<usize>(out) + offset + <usize>${offset + offsetDyn}, input.${key}.length);`);
                 serializeStmts.push(`memory.copy(changetype<usize>(out) + offset + <usize>${offset + 2}${offsetDyn}, changetype<usize>(input.${key}.buffer), input.${key}.length);`);
-                //deserializeStmts.push(`out.${key} = instantiate<${baseType}>(load<u8>(changetype<usize>(input) + offset + <usize>${offset + offsetDyn}));`)
                 deserializeStmts.push(`out.${key}.buffer = input.slice(offset + <usize>${offset + 2}${offsetDyn}, offset + <usize>${offset + 2}${offsetDyn} + load<u16>(changetype<usize>(input) + offset + <usize>${offset + offsetDyn}));`);
                 deserializeStmts.push(`store<usize>(changetype<usize>(out.${key}), changetype<usize>(out.${key}.buffer), offsetof<${type}>("dataStart"));`);
                 deserializeStmts.push(`out.${key}.byteLength = out.${key}.buffer.byteLength;`);
@@ -123,20 +117,14 @@ class TBSTransform extends BaseVisitor {
                 offset += 2;
                 offsetDyn += ` + <usize>dynamic.${key}.length`;
                 this.currentClass.instantiateStmts.push(`this.${key} = [];`);
-                //}
-                //}
             }
             else if (type == "string") {
-                //switch (typeDeep) {
-                //case "i8" || "u8" || "i16" || "u16" || "i32" || "u32": {
                 serializeStmts.push(`store<u16>(changetype<usize>(out) + offset + <usize>${offset + offsetDyn}, input.${key}.length);`);
                 serializeStmts.push(`memory.copy(changetype<usize>(out) + offset + <usize>${offset + 2}${offsetDyn}, changetype<usize>(input.${key}), input.${key}.length << 1);`);
                 deserializeStmts.push(`out.${key} = String.UTF16.decodeUnsafe(changetype<usize>(input) + offset + <usize>${offset + 2}${offsetDyn}, load<u16>(changetype<usize>(input) + offset + <usize>${offset + offsetDyn}) << 1);`);
                 offset += 2;
                 offsetDyn += ` + <usize>(dynamic.${key}.length << 1)`;
                 this.currentClass.instantiateStmts.push(`this.${key} = "";`);
-                //}
-                //}
             }
             else if (this.schemasList.filter(v => v.name == type).length) {
                 const ctx = this.schemasList.find(v => v.name == type);
@@ -195,27 +183,6 @@ class TBSTransform extends BaseVisitor {
     visitSource(node) {
         this.globalStatements = [];
         super.visitSource(node);
-        /*const replacer = new RangeTransform(node);
-        for (const stmt of this.globalStatements) {
-            console.log(toString(stmt));
-            replacer.visit(stmt);
-        }
-
-        if (this.serializeFunc == "__TBS_Serialize<T>(input: T, out: ArrayBuffer, offset: usize = 0): ArrayBuffer {\n") return;
-        this.serializeFunc += "\n\treturn unreachable();\n}";
-        this.deserializeFunc += "\n\treturn unreachable();\n}";
-
-        console.log(this.serializeFunc);
-        console.log(this.deserializeFunc);
-
-        const serFunc = SimpleParser.parseTopLevelStatement(this.serializeFunc);
-        const deFunc = SimpleParser.parseTopLevelStatement(this.deserializeFunc);
-        replacer.visit(serFunc);
-        replacer.visit(deFunc);
-        node.statements.unshift(serFunc);
-        node.statements.unshift(deFunc);
-*/
-        //node.statements.unshift(...this.globalStatements);
     }
 }
 function djb2Hash(str) {
@@ -225,7 +192,6 @@ function djb2Hash(str) {
     }
     return hash;
 }
-//export default registerDecorator(new TBSTransform());
 export default class Transformer extends Transform {
     // Trigger the transform after parse.
     afterParse(parser) {

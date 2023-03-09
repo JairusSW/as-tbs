@@ -11,6 +11,7 @@
     "bench:astral": "astral --runtime stub --uncheckedBehavior always > benchmark-results.txt",
     "build:test": "asc assembly/test.ts --target test",
     "build:transform": "tsc -p ./transform",
+    "build:generator": "tsc -p ./generator",
     "test:wasmtime": "wasmtime ./build/test.wasm",
     "test:lunatic": "lunatic ./build/test.wasm",
     "test:wasm3": "wasm3 ./build/test.wasm",
