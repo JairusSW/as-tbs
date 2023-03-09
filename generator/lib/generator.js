@@ -39,11 +39,30 @@ export class TBSGenerator {
         }
         return methods;
     }
+    generateText(type, methods, complex = true) {
+        let baseOffset = 0;
+        let text = [];
+        for (const method of methods) {
+            if (type == "deserialize") {
+                for (const stmt of method.deserializeStmts) {
+                    text.push((complex ? stmt.text.replace("OFFSET", `changetype<usize>(out) + offset + ${baseOffset}`) : stmt.text.replace("OFFSET", `changetype<usize>(out) + ${baseOffset}`)).replace(" + 0", ""));
+                    if (complex)
+                        baseOffset += stmt.offset;
+                }
+            }
+            else if (type == "serialize") {
+                for (const stmt of method.serializeStmts) {
+                    text.push((complex ? stmt.text.replace("OFFSET", `changetype<usize>(input) + offset + ${baseOffset}`) : stmt.text.replace("OFFSET", `changetype<usize>(input) + ${baseOffset}`).replace(" + 0", "")).replace(" + 0", ""));
+                    if (complex)
+                        baseOffset += stmt.offset;
+                }
+            }
+        }
+        return text;
+    }
 }
 const generator = new TBSGenerator();
 const schema = new TBSSchema("Vec3", ["x", "y", "z"], [new TBSType("f32", []), new TBSType("f32", []), new TBSType("f32", [])]);
 const generatedMethods = generator.addSchema(schema);
-for (const method of generatedMethods) {
-    console.log(method.generateStatements("serialize"));
-    console.log(method.generateStatements("deserialize"));
-}
+console.log(generator.generateText("serialize", generatedMethods));
+console.log(generator.generateText("deserialize", generatedMethods));
