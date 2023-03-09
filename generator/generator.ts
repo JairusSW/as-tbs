@@ -75,18 +75,25 @@ export class TBSGenerator {
             text: `@inline __TBS_Serialize(input: ${schema.name}, out: ArrayBuffer, offset: usize = 0): ArrayBuffer {\n\t${stmts.join("\n\t")}\n}`
         }
     }
-    generateDeserializeMethod(schema: TBSSchema, complex: boolean = true) {
+    generateDeserializeMethods(schema: TBSSchema) {
         let baseOffset = 0;
-        let stmts: string[] = [];
+        let fluidOffset = 0;
+        let keyStmts: string[] = [];
+        let methodStmts: string[] = [];
         for (const method of this.parseSchema(schema)) {
+            baseOffset = 0;
             for (const stmt of method.deserializeStmts) {
-                stmts.push((complex ? stmt.text.replaceAll("OFFSET", `changetype<usize>(input) + offset + <usize>${baseOffset}`) : stmt.text.replaceAll("OFFSET", `changetype<usize>(out) + <usize>${baseOffset}`)).replaceAll(" + <usize>0", ""));
-                if (complex) baseOffset += stmt.offset;
+                methodStmts.push(stmt.text.replaceAll("OFFSET", `changetype<usize>(input) + offset + <usize>${fluidOffset}`).replaceAll(" + <usize>0", ""));
+                keyStmts.push(stmt.text.replaceAll("OFFSET", `changetype<usize>(out) + offset + <usize>${baseOffset}`).replaceAll(" + <usize>0", ""));
+                baseOffset += stmt.offset;
+                fluidOffset += stmt.offset;
             }
         }
         return {
-            statements: stmts,
-            text: `@inline __TBS_Deserialize(input: ArrayBuffer, out: ${schema.name}, offset: usize = 0): ${schema.name} {\n\t${stmts.join("\n\t")}\n}`
+            keyStmts: keyStmts,
+            methodStmts: methodStmts,
+            methodText: `@inline __TBS_Deserialize(input: ArrayBuffer, out: ${schema.name}, offset: usize = 0): ${schema.name} {\n\t${methodStmts.join("\n\t")}\n}`,
+            keyText: `@inline __TBS_Deserialize_Key(input: ArrayBuffer, out: ${schema.name}, offset: usize = 0): ${schema.name} {\n\t${methodStmts.join("\n\t")}\n}`,
         }
     }
 }
@@ -98,5 +105,5 @@ const schema = new TBSSchema("Vec3", ["x", "y", "z"], [new TBSType("f32", []), n
 const serializeMethod = generator.generateSerializeMethod(schema);
 console.log(serializeMethod.statements, serializeMethod.text);
 
-const deserializeMethod = generator.generateDeserializeMethod(schema);
+const deserializeMethod = generator.generateDeserializeMethods(schema);
 console.log(deserializeMethod.statements, deserializeMethod.text);
