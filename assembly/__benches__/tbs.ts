@@ -16,16 +16,6 @@ class Position {
     data!: Array<u8>;
 }
 
-@inline function instantiateArrayWithBuffer<T extends Array<any>>(buffer: ArrayBuffer, offset: usize, byteLength: i32): T {
-    const buf = buffer.slice(offset, offset + byteLength);
-    const arr = changetype<T>(__new(offsetof<T>(), idof<T>()));
-    store<usize>(changetype<usize>(arr), changetype<usize>(buf), offsetof<T>("dataStart"));
-    arr.byteLength = byteLength;
-    arr.buffer = buf;
-    arr.length = byteLength;
-    return arr;
-}
-
 const pos: Position = {
     moving: true,
     id: 9,

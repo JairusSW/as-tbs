@@ -111,6 +111,7 @@ class TBSTransform extends BaseVisitor {
                 //}
             }
             else if (type.startsWith("Array") && type != "ArrayBuffer") {
+                console.log(type);
                 serializeStmts.push(`store<u16>(changetype<usize>(out) + offset + <usize>${offset + offsetDyn}, input.${key}.length);`);
                 serializeStmts.push(`memory.copy(changetype<usize>(out) + offset + <usize>${offset + 2}${offsetDyn}, changetype<usize>(input.${key}.buffer), input.${key}.length);`);
                 //deserializeStmts.push(`out.${key} = instantiate<${baseType}>(load<u8>(changetype<usize>(input) + offset + <usize>${offset + offsetDyn}));`)
