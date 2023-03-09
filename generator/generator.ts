@@ -3,6 +3,7 @@ import { TBSType } from "./type.js";
 import { TBSMethod } from "./method.js";
 import { TBSStatement } from "./statement.js";
 import { getWidthOf } from "./util.js";
+import { parse } from "types:assemblyscript/src/index-wasm";
 
 const numberTypes = ["i8", "u8", "i16", "u16", "i32", "u32", "f32", "i64", "I64", "u64", "f64"];
 
@@ -11,7 +12,7 @@ export class TBSGenerator {
     public offset: number = 0;
     public offsetDyn: string[] = [];
     constructor() { }
-    addSchema(schema: TBSSchema): TBSMethod[] {
+    parseSchema(schema: TBSSchema): TBSMethod[] {
         let methods: TBSMethod[] = [];
         if (schema.keys.length != schema.types.length) throw new Error("Could not add schema " + schema.name + " because it is missing a type or key");
         for (let pos = 0; pos < schema.keys.length; pos++) {
@@ -60,23 +61,33 @@ export class TBSGenerator {
         }
         return methods;
     }
-    generateText(type: "serialize" | "deserialize", methods: TBSMethod[], complex: boolean = true) {
+    generateSerializeMethod(schema: TBSSchema, complex: boolean = true) {
         let baseOffset = 0;
-        let text: string[] = [];
-        for (const method of methods) {
-            if (type == "deserialize") {
-                for (const stmt of method.deserializeStmts) {
-                    text.push((complex ? stmt.text.replace("OFFSET", `changetype<usize>(out) + offset + ${baseOffset}`) : stmt.text.replace("OFFSET", `changetype<usize>(out) + ${baseOffset}`)).replace(" + 0", ""));
-                    if (complex) baseOffset += stmt.offset;
-                }
-            } else if (type == "serialize") {
-                for (const stmt of method.serializeStmts) {
-                    text.push((complex ? stmt.text.replace("OFFSET", `changetype<usize>(input) + offset + ${baseOffset}`) : stmt.text.replace("OFFSET", `changetype<usize>(input) + ${baseOffset}`).replace(" + 0", "")).replace(" + 0", ""));
-                    if (complex) baseOffset += stmt.offset;
-                }
+        let stmts: string[] = [];
+        for (const method of this.parseSchema(schema)) {
+            for (const stmt of method.serializeStmts) {
+                stmts.push((complex ? stmt.text.replaceAll("OFFSET", `changetype<usize>(out) + offset + <usize>${baseOffset}`) : stmt.text.replaceAll("OFFSET", `changetype<usize>(input) + <usize>${baseOffset}`)).replaceAll(" + <usize>0", ""));
+                if (complex) baseOffset += stmt.offset;
             }
         }
-        return text;
+        return {
+            statements: stmts,
+            text: `@inline __TBS_Serialize(input: ${schema.name}, out: ArrayBuffer, offset: usize = 0): ArrayBuffer {\n\t${stmts.join("\n\t")}\n}`
+        }
+    }
+    generateDeserializeMethod(schema: TBSSchema, complex: boolean = true) {
+        let baseOffset = 0;
+        let stmts: string[] = [];
+        for (const method of this.parseSchema(schema)) {
+            for (const stmt of method.deserializeStmts) {
+                stmts.push((complex ? stmt.text.replaceAll("OFFSET", `changetype<usize>(input) + offset + <usize>${baseOffset}`) : stmt.text.replaceAll("OFFSET", `changetype<usize>(out) + <usize>${baseOffset}`)).replaceAll(" + <usize>0", ""));
+                if (complex) baseOffset += stmt.offset;
+            }
+        }
+        return {
+            statements: stmts,
+            text: `@inline __TBS_Deserialize(input: ArrayBuffer, out: ${schema.name}, offset: usize = 0): ${schema.name} {\n\t${stmts.join("\n\t")}\n}`
+        }
     }
 }
 
@@ -84,7 +95,8 @@ const generator = new TBSGenerator();
 
 const schema = new TBSSchema("Vec3", ["x", "y", "z"], [new TBSType("f32", []), new TBSType("f32", []), new TBSType("f32", [])]);
 
-const generatedMethods = generator.addSchema(schema);
+const serializeMethod = generator.generateSerializeMethod(schema);
+console.log(serializeMethod.statements, serializeMethod.text);
 
-console.log(generator.generateText("serialize", generatedMethods));
-console.log(generator.generateText("deserialize", generatedMethods));
+const deserializeMethod = generator.generateDeserializeMethod(schema);
+console.log(deserializeMethod.statements, deserializeMethod.text);

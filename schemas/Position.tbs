@@ -1,3 +1,5 @@
+include "./Vec3.tbs"
+
 Position {
     name: string
     id: i8

@@ -9,7 +9,7 @@ export class TBSGenerator {
     offset = 0;
     offsetDyn = [];
     constructor() { }
-    addSchema(schema) {
+    parseSchema(schema) {
         let methods = [];
         if (schema.keys.length != schema.types.length)
             throw new Error("Could not add schema " + schema.name + " because it is missing a type or key");
@@ -39,30 +39,40 @@ export class TBSGenerator {
         }
         return methods;
     }
-    generateText(type, methods, complex = true) {
+    generateSerializeMethod(schema, complex = true) {
         let baseOffset = 0;
-        let text = [];
-        for (const method of methods) {
-            if (type == "deserialize") {
-                for (const stmt of method.deserializeStmts) {
-                    text.push((complex ? stmt.text.replace("OFFSET", `changetype<usize>(out) + offset + ${baseOffset}`) : stmt.text.replace("OFFSET", `changetype<usize>(out) + ${baseOffset}`)).replace(" + 0", ""));
-                    if (complex)
-                        baseOffset += stmt.offset;
-                }
-            }
-            else if (type == "serialize") {
-                for (const stmt of method.serializeStmts) {
-                    text.push((complex ? stmt.text.replace("OFFSET", `changetype<usize>(input) + offset + ${baseOffset}`) : stmt.text.replace("OFFSET", `changetype<usize>(input) + ${baseOffset}`).replace(" + 0", "")).replace(" + 0", ""));
-                    if (complex)
-                        baseOffset += stmt.offset;
-                }
+        let stmts = [];
+        for (const method of this.parseSchema(schema)) {
+            for (const stmt of method.serializeStmts) {
+                stmts.push((complex ? stmt.text.replaceAll("OFFSET", `changetype<usize>(out) + offset + <usize>${baseOffset}`) : stmt.text.replaceAll("OFFSET", `changetype<usize>(input) + <usize>${baseOffset}`)).replaceAll(" + <usize>0", ""));
+                if (complex)
+                    baseOffset += stmt.offset;
             }
         }
-        return text;
+        return {
+            statements: stmts,
+            text: `@inline __TBS_Serialize(input: ${schema.name}, out: ArrayBuffer, offset: usize = 0): ArrayBuffer {\n\t${stmts.join("\n\t")}\n}`
+        };
+    }
+    generateDeserializeMethod(schema, complex = true) {
+        let baseOffset = 0;
+        let stmts = [];
+        for (const method of this.parseSchema(schema)) {
+            for (const stmt of method.deserializeStmts) {
+                stmts.push((complex ? stmt.text.replaceAll("OFFSET", `changetype<usize>(input) + offset + <usize>${baseOffset}`) : stmt.text.replaceAll("OFFSET", `changetype<usize>(out) + <usize>${baseOffset}`)).replaceAll(" + <usize>0", ""));
+                if (complex)
+                    baseOffset += stmt.offset;
+            }
+        }
+        return {
+            statements: stmts,
+            text: `@inline __TBS_Deserialize(input: ArrayBuffer, out: ${schema.name}, offset: usize = 0): ${schema.name} {\n\t${stmts.join("\n\t")}\n}`
+        };
     }
 }
 const generator = new TBSGenerator();
 const schema = new TBSSchema("Vec3", ["x", "y", "z"], [new TBSType("f32", []), new TBSType("f32", []), new TBSType("f32", [])]);
-const generatedMethods = generator.addSchema(schema);
-console.log(generator.generateText("serialize", generatedMethods));
-console.log(generator.generateText("deserialize", generatedMethods));
+const serializeMethod = generator.generateSerializeMethod(schema);
+console.log(serializeMethod.statements, serializeMethod.text);
+const deserializeMethod = generator.generateDeserializeMethod(schema);
+console.log(deserializeMethod.statements, deserializeMethod.text);
