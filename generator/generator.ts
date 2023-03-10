@@ -3,7 +3,6 @@ import { TBSType } from "./type.js";
 import { TBSMethod } from "./method.js";
 import { TBSStatement } from "./statement.js";
 import { getWidthOf } from "./util.js";
-import { hash32, hashStr, stringToUint8Array } from "./hash.js";
 
 const numberTypes = ["i8", "u8", "i16", "u16", "i32", "u32", "f32", "i64", "I64", "u64", "f64"];
 
@@ -120,17 +119,3 @@ console.log(serializeMethod.methodStmts, "\n", serializeMethod.methodText);
 const deserializeMethod = generator.generateDeserializeMethods(schema);
 console.log(deserializeMethod.keyStmts, "\n", deserializeMethod.keyText);
 console.log(deserializeMethod.methodStmts, "\n", deserializeMethod.methodText);
-
-console.log(stringToUint8Array("Hello World!"));
-const u8Arr = stringToUint8Array("Hello World!");
-console.log(new Uint32Array(u8Arr.buffer, u8Arr.byteOffset, u8Arr.byteLength / 4));
-console.log(hashStr("Hello World"));
-// 690424818
-/*
-72, 101, 108, 108, 111,
-   32,  87, 111, 114, 108,
-  100,  33
-  */
-
-console.log(hash32(123))
-  // 2084472513

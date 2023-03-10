@@ -29,6 +29,7 @@ export function hashStr(key) {
         return XXH32_SEED;
     const u8Arr = stringToUint8Array(key);
     const u32Arr = new Uint32Array(u8Arr.buffer, u8Arr.byteOffset, u8Arr.byteLength / 4);
+    console.log("u32Arr: ", u32Arr, u32Arr[0], u32Arr[4]);
     let h = key.length << 1;
     let len = h;
     let pos = 0;
@@ -37,7 +38,7 @@ export function hashStr(key) {
         let s2 = XXH32_SEED + XXH32_P2;
         let s3 = XXH32_SEED;
         let s4 = XXH32_SEED - XXH32_P1;
-        let end = len + pos - 16;
+        let end = len - 16;
         while (pos <= end) {
             s1 = mix(s1, u32Arr[pos]);
             s2 = mix(s2, u32Arr[pos + 4]);

@@ -98,7 +98,29 @@ console.log(deserializeMethod.methodStmts, "\n", deserializeMethod.methodText);
 console.log(stringToUint8Array("Hello World!"));
 const u8Arr = stringToUint8Array("Hello World!");
 console.log(new Uint32Array(u8Arr.buffer, u8Arr.byteOffset, u8Arr.byteLength / 4));
+function xxh32(str) {
+    const prime1 = 0x9E3779B1;
+    const prime2 = 0x85EBCA77;
+    const prime3 = 0xC2B2AE3D;
+    const prime4 = 0x27D4EB2F;
+    const seed = 0;
+    let hash = seed + prime4;
+    for (let i = 0; i < str.length; i += 4) {
+        let word = 0;
+        for (let j = 0; j < 4 && i + j < str.length; j++) {
+            word |= str.charCodeAt(i + j) << (8 * j);
+        }
+        hash = ((hash + (word * prime2)) % prime1) * prime3;
+    }
+    hash = (hash ^ (hash >>> 16)) * prime1;
+    hash = (hash ^ (hash >>> 13)) * prime2;
+    hash = hash ^ (hash >>> 16);
+    return hash >>> 0;
+}
 console.log(hashStr("Hello World"));
+console.log(xxh32("Hello World"));
+// 690424818
+// 
 /*
 72, 101, 108, 108, 111,
    32,  87, 111, 114, 108,
