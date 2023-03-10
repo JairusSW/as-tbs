@@ -4,6 +4,9 @@ import { TBSMethod } from "./method.js";
 import { TBSStatement } from "./statement.js";
 import { getWidthOf } from "./util.js";
 
+import { compress, decompress } from "tsmaz";
+import { hashStr } from "./hash.js";
+
 const numberTypes = ["i8", "u8", "i16", "u16", "i32", "u32", "f32", "i64", "I64", "u64", "f64"];
 
 export class TBSGenerator {
@@ -119,3 +122,10 @@ console.log(serializeMethod.methodStmts, "\n", serializeMethod.methodText);
 const deserializeMethod = generator.generateDeserializeMethods(schema);
 console.log(deserializeMethod.keyStmts, "\n", deserializeMethod.keyText);
 console.log(deserializeMethod.methodStmts, "\n", deserializeMethod.methodText);
+
+const compressed = compress('Hello World');
+console.log(compressed);
+console.log(decompress(compressed));
+
+console.log(hashStr("Hello World"));
+// 690424818

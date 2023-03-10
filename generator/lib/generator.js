@@ -3,7 +3,8 @@ import { TBSType } from "./type.js";
 import { TBSMethod } from "./method.js";
 import { TBSStatement } from "./statement.js";
 import { getWidthOf } from "./util.js";
-import { hash32, hashStr, stringToUint8Array } from "./hash.js";
+import { compress, decompress } from "tsmaz";
+import { hashStr } from "./hash.js";
 const numberTypes = ["i8", "u8", "i16", "u16", "i32", "u32", "f32", "i64", "I64", "u64", "f64"];
 export class TBSGenerator {
     schemas = [];
@@ -95,36 +96,8 @@ console.log(serializeMethod.methodStmts, "\n", serializeMethod.methodText);
 const deserializeMethod = generator.generateDeserializeMethods(schema);
 console.log(deserializeMethod.keyStmts, "\n", deserializeMethod.keyText);
 console.log(deserializeMethod.methodStmts, "\n", deserializeMethod.methodText);
-console.log(stringToUint8Array("Hello World!"));
-const u8Arr = stringToUint8Array("Hello World!");
-console.log(new Uint32Array(u8Arr.buffer, u8Arr.byteOffset, u8Arr.byteLength / 4));
-function xxh32(str) {
-    const prime1 = 0x9E3779B1;
-    const prime2 = 0x85EBCA77;
-    const prime3 = 0xC2B2AE3D;
-    const prime4 = 0x27D4EB2F;
-    const seed = 0;
-    let hash = seed + prime4;
-    for (let i = 0; i < str.length; i += 4) {
-        let word = 0;
-        for (let j = 0; j < 4 && i + j < str.length; j++) {
-            word |= str.charCodeAt(i + j) << (8 * j);
-        }
-        hash = ((hash + (word * prime2)) % prime1) * prime3;
-    }
-    hash = (hash ^ (hash >>> 16)) * prime1;
-    hash = (hash ^ (hash >>> 13)) * prime2;
-    hash = hash ^ (hash >>> 16);
-    return hash >>> 0;
-}
+const compressed = compress('Hello World');
+console.log(compressed);
+console.log(decompress(compressed));
 console.log(hashStr("Hello World"));
-console.log(xxh32("Hello World"));
 // 690424818
-// 
-/*
-72, 101, 108, 108, 111,
-   32,  87, 111, 114, 108,
-  100,  33
-  */
-console.log(hash32(123));
-// 2084472513

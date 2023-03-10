@@ -6,5 +6,6 @@ export class TBSSchema {
         this.name = name;
         this.keys = keys;
         this.types = types;
+        // TODO: Sort with djb2
     }
 }
