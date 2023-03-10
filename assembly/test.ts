@@ -1,5 +1,6 @@
 import { JSON } from "json-as";
 import { TBS } from "./src/tbs";
+import { HASH } from "util/hash";
 
 @json
 @tbs
@@ -73,3 +74,7 @@ const parsedPos = TBS.parse<Position>(serializedPos);//new Position().__TBS_Inst
 //TBS.parse<Position>(serializedPos, parsedPos);
 
 console.log(JSON.stringify(parsedPos));
+
+console.log(HASH("Hello World").toString());
+console.log(HASH(123).toString());
+// 2084472513

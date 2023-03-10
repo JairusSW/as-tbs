@@ -5,7 +5,7 @@ import {
     Parser,
     Statement
 } from "assemblyscript/dist/assemblyscript";
-import { toString } from "visitor-as/dist/utils.js";
+import { isStdlib, toString } from "visitor-as/dist/utils.js";
 import { BaseVisitor, SimpleParser } from "visitor-as/dist/index.js";
 import { Transform } from "assemblyscript/dist/transform.js";
 class SchemaData {
@@ -217,12 +217,27 @@ function djb2Hash(str: string): number {
 export default class Transformer extends Transform {
     // Trigger the transform after parse.
     afterParse(parser: Parser): void {
+        // Create new transform
+        const transformer = new TBSTransform();
+
+        // Sort the sources so that user scripts are visited last
+        const sources = parser.sources.filter(source => !isStdlib(source)).sort((_a, _b) => {
+            const a = _a.internalPath
+            const b = _b.internalPath
+            if (a[0] === "~" && b[0] !== "~") {
+                return -1;
+            } else if (a[0] !== "~" && b[0] === "~") {
+                return 1;
+            } else {
+                return 0;
+            }
+        });
+
         // Loop over every source
-        for (const source of parser.sources) {
-            // Ignore all lib (std lib). Visit everything else.
-            if (!source.isLibrary && !source.internalPath.startsWith(`~lib/`)) {
-                const transform = new TBSTransform();
-                transform.visit(source);
+        for (const source of sources) {
+            // Ignore all lib and std. Visit everything else.
+            if (!isStdlib(source)) {
+                transformer.visit(source);
             }
         }
     }

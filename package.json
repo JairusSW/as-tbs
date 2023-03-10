@@ -35,7 +35,8 @@
     "as-string-sink": "^0.5.0",
     "as-variant": "^0.4.1",
     "byte-parse-as": "^0.1.0",
-    "visitor-as": "^0.11.4"
+    "visitor-as": "^0.11.4",
+    "xxh32": "^1.4.0"
   },
   "repository": {
     "type": "git",
