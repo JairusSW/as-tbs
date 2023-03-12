@@ -28,6 +28,7 @@ export function hashStr(key) {
     if (!key.length)
         return XXH32_SEED;
     const u8Arr = stringToUint8Array(key);
+    const u32Arr = new Uint32Array(u8Arr.buffer, u8Arr.byteOffset, u8Arr.byteLength / 4);
     let h = key.length << 1;
     let len = h;
     let pos = 0;
@@ -38,10 +39,10 @@ export function hashStr(key) {
         let s4 = XXH32_SEED - XXH32_P1;
         let end = len + pos - 16;
         while (pos <= end) {
-            s1 = mix(s1, getU32(u8Arr, pos, false));
-            s2 = mix(s2, getU32(u8Arr, pos + 4, false));
-            s3 = mix(s3, getU32(u8Arr, pos + 8, false));
-            s4 = mix(s4, getU32(u8Arr, pos + 12, false));
+            s1 = mix(s1, u32Arr[pos]);
+            s2 = mix(s2, u32Arr[pos + 4]);
+            s3 = mix(s3, u32Arr[pos + 8]);
+            s4 = mix(s4, u32Arr[pos + 12]);
             pos += 16;
         }
         h += rotl(s1, 1) + rotl(s2, 7) + rotl(s3, 12) + rotl(s4, 18);
@@ -51,13 +52,13 @@ export function hashStr(key) {
     }
     let end = len - 4;
     while (pos <= end) {
-        h += getU32(u8Arr, pos, false) * XXH32_P3;
+        h += u32Arr[pos] * XXH32_P3;
         h = rotl(h, 17) * XXH32_P4;
         pos += 4;
     }
     end = len;
     while (pos < end) {
-        h += getU32(u8Arr, pos, false) * XXH32_P5;
+        h += u8Arr[pos] * XXH32_P5;
         h = rotl(h, 11) * XXH32_P1;
         pos++;
     }
@@ -70,29 +71,16 @@ export function hashStr(key) {
 }
 // 690424818
 export function stringToUint8Array(str) {
-    /* let c, hi, lo;
-     const byteArray = new Uint8Array(str.length * 2);
-     let pos = 0;
-     for (let i = 0; i < str.length; ++i) {
-         c = str.charCodeAt(i);
-         hi = c >> 8;
-         lo = c % 256;
-         byteArray[pos] = lo;
-         byteArray[pos + 1] = hi;
-         pos = pos + 2;
-     }
-     return byteArray;*/
-    const byteArray = new Uint8Array(str.length);
-    for (let i = 0; i < str.length; i++) {
-        byteArray[i] = str.charCodeAt(i);
+    let c, hi, lo;
+    const byteArray = new Uint8Array(str.length * 2);
+    let pos = 0;
+    for (let i = 0; i < str.length; ++i) {
+        c = str.charCodeAt(i);
+        hi = c >> 8;
+        lo = c % 256;
+        byteArray[pos] = lo;
+        byteArray[pos + 1] = hi;
+        pos = pos + 2;
     }
     return byteArray;
-}
-function getU32(buffer, byteOffset, littleEndian = true) {
-    if (littleEndian) {
-        return (buffer[byteOffset] + (buffer[byteOffset + 1] << 8) + (buffer[byteOffset + 2] << 16) + (buffer[byteOffset + 3] << 24)) >>> 0;
-    }
-    else {
-        return ((buffer[byteOffset] << 24) >>> 1) + ((buffer[byteOffset + 1] << 16) | (buffer[byteOffset + 2] << 8) | buffer[byteOffset + 3]);
-    }
 }

@@ -42,7 +42,7 @@ export class TBSGenerator {
                     `out.${key} = load<${type.text}>(OFFSET);`,
                     this.offset
                 ));
-            } else if (type.baseType == "StaticArray") {
+            } else if (type.text == "StaticArray") {
                 this.offset += 2;
                 this.offsetDyn.push(`INPUT.${key}.length`);
                 method.serializeStmts.push(new TBSStatement(`store<u16>(OFFSET, input.${key}.length);`,
@@ -113,7 +113,7 @@ export class TBSGenerator {
 
 const generator = new TBSGenerator();
 
-const schema = new TBSSchema("Vec3", ["x", "y", "z"], [new TBSType("f32", []), new TBSType("f32", []), new TBSType("f32", [])]);
+const schema = new TBSSchema("Vec3", ["x", "y", "z","binary"], [new TBSType("f32", []), new TBSType("f32", []), new TBSType("f32", []), new TBSType("StaticArray", [new TBSType("u8")])]);
 
 const serializeMethod = generator.generateSerializeMethods(schema);
 console.log(serializeMethod.keyStmts, "\n", serializeMethod.keyText);
@@ -122,10 +122,3 @@ console.log(serializeMethod.methodStmts, "\n", serializeMethod.methodText);
 const deserializeMethod = generator.generateDeserializeMethods(schema);
 console.log(deserializeMethod.keyStmts, "\n", deserializeMethod.keyText);
 console.log(deserializeMethod.methodStmts, "\n", deserializeMethod.methodText);
-
-const compressed = compress('Hello World');
-console.log(compressed);
-console.log(decompress(compressed));
-
-console.log(hashStr("Hello World"));
-// 690424818

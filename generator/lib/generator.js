@@ -3,8 +3,6 @@ import { TBSType } from "./type.js";
 import { TBSMethod } from "./method.js";
 import { TBSStatement } from "./statement.js";
 import { getWidthOf } from "./util.js";
-import { compress, decompress } from "tsmaz";
-import { hashStr } from "./hash.js";
 const numberTypes = ["i8", "u8", "i16", "u16", "i32", "u32", "f32", "i64", "I64", "u64", "f64"];
 export class TBSGenerator {
     schemas = [];
@@ -30,7 +28,7 @@ export class TBSGenerator {
                 method.serializeStmts.push(new TBSStatement(`store<${type.text}>(OFFSET, input.${key});`, this.offset));
                 method.deserializeStmts.push(new TBSStatement(`out.${key} = load<${type.text}>(OFFSET);`, this.offset));
             }
-            else if (type.baseType == "StaticArray") {
+            else if (type.text == "StaticArray") {
                 this.offset += 2;
                 this.offsetDyn.push(`INPUT.${key}.length`);
                 method.serializeStmts.push(new TBSStatement(`store<u16>(OFFSET, input.${key}.length);`, this.offset));
@@ -89,15 +87,10 @@ export class TBSGenerator {
     }
 }
 const generator = new TBSGenerator();
-const schema = new TBSSchema("Vec3", ["x", "y", "z"], [new TBSType("f32", []), new TBSType("f32", []), new TBSType("f32", [])]);
+const schema = new TBSSchema("Vec3", ["x", "y", "z", "binary"], [new TBSType("f32", []), new TBSType("f32", []), new TBSType("f32", []), new TBSType("StaticArray", [new TBSType("u8")])]);
 const serializeMethod = generator.generateSerializeMethods(schema);
 console.log(serializeMethod.keyStmts, "\n", serializeMethod.keyText);
 console.log(serializeMethod.methodStmts, "\n", serializeMethod.methodText);
 const deserializeMethod = generator.generateDeserializeMethods(schema);
 console.log(deserializeMethod.keyStmts, "\n", deserializeMethod.keyText);
 console.log(deserializeMethod.methodStmts, "\n", deserializeMethod.methodText);
-const compressed = compress('Hello World');
-console.log(compressed);
-console.log(decompress(compressed));
-console.log(hashStr("Hello World"));
-// 690424818
