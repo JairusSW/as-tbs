@@ -1,6 +1,9 @@
-import { toString } from "visitor-as/dist/utils.js";
+import { isStdlib, toString } from "visitor-as/dist/utils.js";
 import { BaseVisitor, SimpleParser } from "visitor-as/dist/index.js";
 import { Transform } from "assemblyscript/dist/transform.js";
+import { TBSGenerator } from "../generator/generator.js";
+import { TBSSchema } from "../generator/schema.js";
+import { TBSType } from "../generator/type.js";
 class SchemaData {
     keys = [];
     types = [];
@@ -178,6 +181,19 @@ class TBSTransform extends BaseVisitor {
             node.members.push(sizeMethod);
             console.log(this.sizeFunc);
         }
+        const generator = new TBSGenerator();
+        const schema = new TBSSchema(this.currentClass.name, this.currentClass.keys, this.currentClass.types.map(t => new TBSType(t)));
+        const serializeMethods = generator.generateSerializeMethods(schema);
+        console.log("Schema: ", schema);
+        if (!node.members.find(v => v.name.text == "__TBS_Serialize_Key")) {
+            console.log(serializeMethods.keyText);
+            node.members.push(SimpleParser.parseClassMember(serializeMethods.keyText, node));
+        }
+        const deserializeMethods = generator.generateDeserializeMethods(schema);
+        if (!node.members.find(v => v.name.text == "__TBS_Deserialize_Key")) {
+            console.log(deserializeMethods.keyText);
+            node.members.push(SimpleParser.parseClassMember(deserializeMethods.keyText, node));
+        }
         this.schemasList.push(this.currentClass);
     }
     visitSource(node) {
@@ -195,12 +211,27 @@ function djb2Hash(str) {
 export default class Transformer extends Transform {
     // Trigger the transform after parse.
     afterParse(parser) {
+        // Create new transform
+        const transformer = new TBSTransform();
+        // Sort the sources so that user scripts are visited last
+        const sources = parser.sources.filter(source => !isStdlib(source)).sort((_a, _b) => {
+            const a = _a.internalPath;
+            const b = _b.internalPath;
+            if (a[0] === "~" && b[0] !== "~") {
+                return -1;
+            }
+            else if (a[0] !== "~" && b[0] === "~") {
+                return 1;
+            }
+            else {
+                return 0;
+            }
+        });
         // Loop over every source
-        for (const source of parser.sources) {
-            // Ignore all lib (std lib). Visit everything else.
-            if (!source.isLibrary && !source.internalPath.startsWith(`~lib/`)) {
-                const transform = new TBSTransform();
-                transform.visit(source);
+        for (const source of sources) {
+            // Ignore all lib and std. Visit everything else.
+            if (!isStdlib(source)) {
+                transformer.visit(source);
             }
         }
     }

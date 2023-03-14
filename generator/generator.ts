@@ -15,7 +15,7 @@ export class TBSGenerator {
         if (schema.keys.length != schema.types.length) throw new Error("Could not add schema " + schema.name + " because it is missing a type or key");
         for (let pos = 0; pos < schema.keys.length; pos++) {
             const key = schema.keys[pos];
-            const type = schema.types[pos];
+            const type = schema.types[pos]!;
             this.offset = 0;
             const method = new TBSMethod();
             if (numberTypes.includes(type.text.toLowerCase())) {
@@ -80,7 +80,7 @@ export class TBSGenerator {
             keyStmts: keyStmts,
             methodStmts: methodStmts,
             methodText: `@inline __TBS_Serialize(input: ${schema.name}, out: ArrayBuffer, offset: usize = 0): ArrayBuffer {\n    ${methodStmts.join("\n    ")}\n}`,
-            keyText: `@inline __TBS_Serialize_Key(key: i32, input: ${schema.name}, out: ArrayBuffer, offset: usize = 0): ${schema.name} {\n    ` + "switch (key) {\n        " + keyStmts.map(v => `    case ${id++}: {\n            ${v}\n            break;\n        }`).join("\n    "),
+            keyText: `@inline __TBS_Serialize_Key(key: i32, input: ${schema.name}, out: ArrayBuffer, offset: usize = 0): void {\n    ` + "switch (key) {\n        " + keyStmts.map(v => `    case ${id++}: {\n            ${v}\n            break;\n        }`).join("\n    ") + "    \n}\n}",
         }
     }
     generateDeserializeMethods(schema: TBSSchema) {
@@ -102,7 +102,7 @@ export class TBSGenerator {
             keyStmts: keyStmts,
             methodStmts: methodStmts,
             methodText: `@inline __TBS_Deserialize(input: ArrayBuffer, out: ${schema.name}, offset: usize = 0): ${schema.name} {\n    ${methodStmts.join("\n    ")}\n}`,
-            keyText: `@inline __TBS_Deserialize_Key(key: i32, input: ArrayBuffer, out: ${schema.name}, offset: usize = 0): ${schema.name} {\n    ` + "switch (key) {\n        " + keyStmts.map(v => `    case ${id++}: {\n            ${v}\n            break;\n        }`).join("\n    "),
+            keyText: `@inline __TBS_Deserialize_Key(key: i32, input: ArrayBuffer, out: ${schema.name}, offset: usize = 0): void {\n    ` + "switch (key) {\n        " + keyStmts.map(v => `    case ${id++}: {\n            ${v}\n            break;\n        }`).join("\n    ") + "    \n}\n}",
         }
     }
 }

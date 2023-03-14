@@ -2,7 +2,7 @@
     "name": "@as-tbs/transform",
     "version": "0.1.0",
     "description": "tbs encoder/decoder for AssemblyScript",
-    "main": "./lib/index.js",
+    "main": "./lib/transform/index.js",
     "author": "Jairus Tanaka",
     "license": "MIT",
     "devDependencies": {},

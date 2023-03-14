@@ -9,9 +9,9 @@ import { isStdlib, toString } from "visitor-as/dist/utils.js";
 import { BaseVisitor, SimpleParser } from "visitor-as/dist/index.js";
 import { Transform } from "assemblyscript/dist/transform.js";
 
-import { TBSGenerator } from "../../generator/generator.js";
-import { TBSSchema } from "../../generator/schema.js";
-import { TBSType } from "../../generator/type.js";
+import { TBSGenerator } from "../generator/generator.js";
+import { TBSSchema } from "../generator/schema.js";
+import { TBSType } from "../generator/type.js";
 
 class SchemaData {
     public keys: any[] = [];
@@ -208,16 +208,17 @@ class TBSTransform extends BaseVisitor {
         const schema = new TBSSchema(this.currentClass.name, this.currentClass.keys, this.currentClass.types.map(t => new TBSType(t!)));
         const serializeMethods = generator.generateSerializeMethods(schema);
 
+        console.log("Schema: ", schema);
         if (!node.members.find(v => v.name.text == "__TBS_Serialize_Key")) {
-            node.members.push(SimpleParser.parseClassMember(serializeMethods.keyText, node));
             console.log(serializeMethods.keyText);
+            node.members.push(SimpleParser.parseClassMember(serializeMethods.keyText, node));
         }
 
-        const deserializeMethods = generator.generateSerializeMethods(schema);
+        const deserializeMethods = generator.generateDeserializeMethods(schema);
 
         if (!node.members.find(v => v.name.text == "__TBS_Deserialize_Key")) {
-            node.members.push(SimpleParser.parseClassMember(deserializeMethods.keyText, node));
             console.log(deserializeMethods.keyText);
+            node.members.push(SimpleParser.parseClassMember(deserializeMethods.keyText, node));
         }
 
         this.schemasList.push(this.currentClass);
