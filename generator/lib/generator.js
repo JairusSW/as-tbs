@@ -58,7 +58,7 @@ export class TBSGenerator {
             keyStmts: keyStmts,
             methodStmts: methodStmts,
             methodText: `@inline __TBS_Serialize(input: ${schema.name}, out: ArrayBuffer, offset: usize = 0): ArrayBuffer {\n    ${methodStmts.join("\n    ")}\n}`,
-            keyText: `@inline __TBS_Serialize_Key(key: i32, input: ${schema.name}, out: ArrayBuffer, offset: usize = 0): void {\n    ` + "switch (key) {\n        " + keyStmts.map(v => `    case ${id++}: {\n            ${v}\n            break;\n        }`).join("\n    ") + "    \n}\n}",
+            keyText: `@inline __TBS_Serialize_Key(key: string, input: ${schema.name}, out: ArrayBuffer, offset: usize = 0): void {\n    ` + "switch (key) {\n        " + keyStmts.map(v => `    case "${schema.keys[id++]}": {\n            ${v}\n            break;\n        }`).join("\n    ") + "    \n}\n}",
         };
     }
     generateDeserializeMethods(schema) {
