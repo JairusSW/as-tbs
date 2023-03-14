@@ -1,11 +1,7 @@
 import { TBSSchema } from "./schema.js";
-import { TBSType } from "./type.js";
 import { TBSMethod } from "./method.js";
 import { TBSStatement } from "./statement.js";
 import { getWidthOf } from "./util.js";
-
-import { compress, decompress } from "tsmaz";
-import { hashStr } from "./hash.js";
 
 const numberTypes = ["i8", "u8", "i16", "u16", "i32", "u32", "f32", "i64", "I64", "u64", "f64"];
 
@@ -110,7 +106,7 @@ export class TBSGenerator {
         }
     }
 }
-
+/*
 const generator = new TBSGenerator();
 
 const schema = new TBSSchema("Vec3", ["x", "y", "z","binary"], [new TBSType("f32", []), new TBSType("f32", []), new TBSType("f32", []), new TBSType("StaticArray", [new TBSType("u8")])]);
@@ -121,4 +117,4 @@ console.log(serializeMethod.methodStmts, "\n", serializeMethod.methodText);
 
 const deserializeMethod = generator.generateDeserializeMethods(schema);
 console.log(deserializeMethod.keyStmts, "\n", deserializeMethod.keyText);
-console.log(deserializeMethod.methodStmts, "\n", deserializeMethod.methodText);
+console.log(deserializeMethod.methodStmts, "\n", deserializeMethod.methodText);*/
