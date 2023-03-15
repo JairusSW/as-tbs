@@ -57,8 +57,15 @@ export class TBSGenerator {
         return {
             keyStmts: keyStmts,
             methodStmts: methodStmts,
-            methodText: `@inline __TBS_Serialize(input: ${schema.name}, out: ArrayBuffer, offset: usize = 0): ArrayBuffer {\n    ${methodStmts.join("\n    ")}\n    return out;\n}`,
-            keyText: `@inline __TBS_Serialize_Key(key: string, input: ${schema.name}, out: ArrayBuffer, offset: usize = 0): void {\n    ` + keyStmts.map(v => `if ("${schema.keys[id++]}" === key) {\n        ${v}\n        return;\n    }`).join("\n    ") + "\n}",
+            methodText: `@inline __TBS_Serialize(input: ${schema.name}, out: ArrayBuffer, offset: usize = 0): ArrayBuffer {
+    ${methodStmts.join("\n    ")}
+    return out;
+}`,
+            keyText: `@inline __TBS_Serialize_Key(key: string, input: ${schema.name}, out: ArrayBuffer, offset: usize = 0): void {${keyStmts.map(v => `if ("${schema.keys[id++]}" === key) {
+        ${v}
+        return;
+    }`).join("    ")}
+}`
         };
     }
     generateDeserializeMethods(schema) {
@@ -79,8 +86,16 @@ export class TBSGenerator {
         return {
             keyStmts: keyStmts,
             methodStmts: methodStmts,
-            methodText: `@inline __TBS_Deserialize(input: ArrayBuffer, out: ${schema.name}, offset: usize = 0): ${schema.name} {\n    ${methodStmts.join("\n    ")}\n    return out;\n}`,
-            keyText: `@inline __TBS_Deserialize_Key(key: i32, input: ArrayBuffer, out: ${schema.name}, offset: usize = 0): void {\n    ` + "switch (key) {\n        " + keyStmts.map(v => `    case ${id++}: {\n            ${v}\n            break;\n        }`).join("\n    ") + "    \n}\n}",
+            methodText: `@inline __TBS_Deserialize(input: ArrayBuffer, out: ${schema.name}, offset: usize = 0): ${schema.name} {
+    ${methodStmts.join("\n    ")}
+    return out;
+}`,
+            keyText: `@inline __TBS_Deserialize_Key(key: string, input: ArrayBuffer, out: ${schema.name}, offset: usize = 0): void {${keyStmts.map(v => `    
+    if ("${schema.keys[id++]}" === key) {
+        ${v}
+        return;
+    }`).join("    ")}
+}`
         };
     }
 }

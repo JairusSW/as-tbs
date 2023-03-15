@@ -7,23 +7,6 @@ class Vec3 {
     x!: f64;
     y!: f64;
     z!: f64;
-    
-    @inline __TBS_Deserialize_Key(key: i32, input: ArrayBuffer, out: Vec3, offset: usize = 0): void {
-        switch (key) {
-            case 0: {
-                out.x = load<f64>(changetype<usize>(out) + offset);
-                break;
-            }
-            case 1: {
-                out.y = load<f64>(changetype<usize>(out) + offset);
-                break;
-            }
-            case 2: {
-                out.z = load<f64>(changetype<usize>(out) + offset);
-                break;
-            }
-        }
-    }
 }
 
 const vec: Vec3 = {
