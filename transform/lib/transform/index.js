@@ -165,13 +165,17 @@ class TBSTransform extends BaseVisitor {
         const deserializeMethod = SimpleParser.parseClassMember(this.deserializeFunc, node);
         const instantiateMethod = SimpleParser.parseClassMember(this.instantiateFunc, node);
         const sizeMethod = SimpleParser.parseClassMember(this.sizeFunc, node);
+        const generator = new TBSGenerator();
+        const schema = new TBSSchema(this.currentClass.name, this.currentClass.keys, this.currentClass.types.map(t => new TBSType(t)));
+        const serializeMethods = generator.generateSerializeMethods(schema);
+        const deserializeMethods = generator.generateDeserializeMethods(schema);
         if (!node.members.find(v => v.name.text == "__TBS_Serialize")) {
-            node.members.push(serializeMethod);
-            console.log(this.serializeFunc);
+            console.log(serializeMethods.methodText);
+            node.members.push(SimpleParser.parseClassMember(serializeMethods.methodText, node));
         }
         if (!node.members.find(v => v.name.text == "__TBS_Deserialize")) {
-            node.members.push(deserializeMethod);
-            console.log(this.deserializeFunc);
+            console.log(deserializeMethods.methodText);
+            node.members.push(SimpleParser.parseClassMember(deserializeMethods.methodText, node));
         }
         if (!node.members.find(v => v.name.text == "__TBS_Instantiate")) {
             node.members.push(instantiateMethod);
@@ -181,15 +185,11 @@ class TBSTransform extends BaseVisitor {
             node.members.push(sizeMethod);
             console.log(this.sizeFunc);
         }
-        const generator = new TBSGenerator();
-        const schema = new TBSSchema(this.currentClass.name, this.currentClass.keys, this.currentClass.types.map(t => new TBSType(t)));
-        const serializeMethods = generator.generateSerializeMethods(schema);
         console.log("Schema: ", schema);
         if (!node.members.find(v => v.name.text == "__TBS_Serialize_Key")) {
             console.log(serializeMethods.keyText);
             node.members.push(SimpleParser.parseClassMember(serializeMethods.keyText, node));
         }
-        const deserializeMethods = generator.generateDeserializeMethods(schema);
         if (!node.members.find(v => v.name.text == "__TBS_Deserialize_Key")) {
             console.log(deserializeMethods.keyText);
             node.members.push(SimpleParser.parseClassMember(deserializeMethods.keyText, node));

@@ -7,22 +7,7 @@ class Vec3 {
     x!: f64;
     y!: f64;
     z!: f64;
-    @inline __TBS_Serialize_Key(key: string, input: Vec3, out: ArrayBuffer, offset: usize = 0): void {
-        if (key.length == 1) {
-            if (key == "x") {
-                store<f64>(changetype<usize>(out) + offset, input.x);
-                return;
-            }
-            if (key == "y") {
-                store<f64>(changetype<usize>(out) + offset, input.y);
-                return;
-            }
-            if (key == "z") {
-                store<f64>(changetype<usize>(out) + offset, input.z);
-                return;
-            }
-        }
-    }
+    
     @inline __TBS_Deserialize_Key(key: i32, input: ArrayBuffer, out: Vec3, offset: usize = 0): void {
         switch (key) {
             case 0: {
