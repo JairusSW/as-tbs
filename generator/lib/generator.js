@@ -33,7 +33,13 @@ export class TBSGenerator {
                 method.serializeStmts.push(new TBSStatement(`memory.copy(OFFSET + 2, changetype<usize>(input.${key}), input.${key}.length);`, this.offset, this.offsetDyn));
                 method.deserializeStmts.push(new TBSStatement(`memory.copy(changetype<usize>(out.${key}), OFFSET + 2, load<u16>(OFFSET));`, this.offset));
             }
-            else if (type.baseType == "string") {
+            else if (type.text == "string") {
+                method.serializeStmts.push(new TBSStatement(`
+                    store<u16>(OFFSET, input.${key}.length);
+                    memory.copy(OFFSET + 2, changetype<usize>(input.${key}), input.${key}.length << 1);`, this.offset));
+                method.deserializeStmts.push(new TBSStatement(`out.${key} = String.UTF16.decodeUnsafe(OFFSET + 2, load<u16>(OFFSET) << 1);`, this.offset));
+                this.offset += 2;
+                this.offsetDyn.push(`(INPUT.${key}.length << 1)`);
             }
             methods.push(method);
         }
@@ -47,7 +53,7 @@ export class TBSGenerator {
         for (const method of this.parseSchema(schema)) {
             baseOffset = 0;
             for (const stmt of method.serializeStmts) {
-                methodStmts.push(stmt.text.replaceAll("OFFSET", `changetype<usize>(out) + offset + <usize>${fluidOffset}`).replaceAll(" + <usize>0", ""));
+                methodStmts.push(stmt.text.replaceAll("OFFSET", `changetype<usize>(out) + offset + <usize>${fluidOffset}${this.offsetDyn.length ? " + <usize>" : ""}${this.offsetDyn.join(" + <usize>").replaceAll("INPUT", "input")}`).replaceAll(" + <usize>0", ""));
                 keyStmts.push(stmt.text.replaceAll("OFFSET", `changetype<usize>(out) + offset + <usize>${baseOffset}`).replaceAll(" + <usize>0", ""));
                 baseOffset += stmt.offset;
                 fluidOffset += stmt.offset;
@@ -57,8 +63,15 @@ export class TBSGenerator {
         return {
             keyStmts: keyStmts,
             methodStmts: methodStmts,
-            methodText: `@inline __TBS_Serialize(input: ${schema.name}, out: ArrayBuffer, offset: usize = 0): ArrayBuffer {\n    ${methodStmts.join("\n    ")}\n}`,
-            keyText: `@inline __TBS_Serialize_Key(key: string, input: ${schema.name}, out: ArrayBuffer, offset: usize = 0): void {\n    ` + "switch (key) {\n        " + keyStmts.map(v => `    case "${schema.keys[id++]}": {\n            ${v}\n            break;\n        }`).join("\n    ") + "    \n}\n}",
+            methodText: `@inline __TBS_Serialize(input: ${schema.name}, out: ArrayBuffer, offset: usize = 0): ArrayBuffer {
+    ${methodStmts.join("\n    ")}
+    return out;
+}`,
+            keyText: `@inline __TBS_Serialize_Key(key: string, input: ${schema.name}, out: ArrayBuffer, offset: usize = 0): void {${keyStmts.map(v => `if ("${schema.keys[id++]}" === key) {
+        ${v}
+        return;
+    }`).join("    ")}
+}`
         };
     }
     generateDeserializeMethods(schema) {
@@ -79,8 +92,16 @@ export class TBSGenerator {
         return {
             keyStmts: keyStmts,
             methodStmts: methodStmts,
-            methodText: `@inline __TBS_Deserialize(input: ArrayBuffer, out: ${schema.name}, offset: usize = 0): ${schema.name} {\n    ${methodStmts.join("\n    ")}\n}`,
-            keyText: `@inline __TBS_Deserialize_Key(key: i32, input: ArrayBuffer, out: ${schema.name}, offset: usize = 0): void {\n    ` + "switch (key) {\n        " + keyStmts.map(v => `    case ${id++}: {\n            ${v}\n            break;\n        }`).join("\n    ") + "    \n}\n}",
+            methodText: `@inline __TBS_Deserialize(input: ArrayBuffer, out: ${schema.name}, offset: usize = 0): ${schema.name} {
+    ${methodStmts.join("\n    ")}
+    return out;
+}`,
+            keyText: `@inline __TBS_Deserialize_Key(key: string, input: ArrayBuffer, out: ${schema.name}, offset: usize = 0): void {${keyStmts.map(v => `    
+    if ("${schema.keys[id++]}" === key) {
+        ${v}
+        return;
+    }`).join("    ")}
+}`
         };
     }
 }

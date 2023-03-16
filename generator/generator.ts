@@ -54,8 +54,18 @@ export class TBSGenerator {
                     `memory.copy(changetype<usize>(out.${key}), OFFSET + 2, load<u16>(OFFSET));`,
                     this.offset
                 ));
-            } else if (type.baseType == "string") {
-                
+            } else if (type.text == "string") {
+                method.serializeStmts.push(new TBSStatement(
+`store<u16>(OFFSET, input.${key}.length);
+        memory.copy(OFFSET + 2, changetype<usize>(input.${key}), input.${key}.length << 1);`,
+                    this.offset
+                ));
+                method.deserializeStmts.push(new TBSStatement(
+                    `out.${key} = String.UTF16.decodeUnsafe(OFFSET + 2, load<u16>(OFFSET) << 1);`,
+                    this.offset
+                ));
+                this.offset += 2;
+                //this.offsetDyn.push(`(INPUT.${key}.length << 1)`);
             }
             methods.push(method);
         }
@@ -69,7 +79,7 @@ export class TBSGenerator {
         for (const method of this.parseSchema(schema)) {
             baseOffset = 0;
             for (const stmt of method.serializeStmts) {
-                methodStmts.push(stmt.text.replaceAll("OFFSET", `changetype<usize>(out) + offset + <usize>${fluidOffset}`).replaceAll(" + <usize>0", ""));
+                methodStmts.push(stmt.text.replaceAll("OFFSET", `changetype<usize>(out) + offset + <usize>${fluidOffset}${this.offsetDyn.length ? " + <usize>" : ""}${this.offsetDyn.join(" + <usize>").replaceAll("INPUT", "input")}`).replaceAll(" + <usize>0", ""));
                 keyStmts.push(stmt.text.replaceAll("OFFSET", `changetype<usize>(out) + offset + <usize>${baseOffset}`).replaceAll(" + <usize>0", ""));
                 baseOffset += stmt.offset;
                 fluidOffset += stmt.offset;

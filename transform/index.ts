@@ -178,14 +178,12 @@ class TBSTransform extends BaseVisitor {
         if (offsetDyn.length) this.sizeFunc += offsetDyn.replaceAll("dynamic", "this").replaceAll("<usize>", "");
         this.sizeFunc += ";\n}";
 
-        const serializeMethod = SimpleParser.parseClassMember(this.serializeFunc, node);
-        const deserializeMethod = SimpleParser.parseClassMember(this.deserializeFunc, node);
         const instantiateMethod = SimpleParser.parseClassMember(this.instantiateFunc, node);
         const sizeMethod = SimpleParser.parseClassMember(this.sizeFunc, node);
 
         const generator = new TBSGenerator();
 
-        const schema = new TBSSchema(this.currentClass.name, this.currentClass.keys, this.currentClass.types.map(t => new TBSType(t!)));
+        const schema = new TBSSchema(this.currentClass.name, sortedKeys, sortedTypes.map(t => new TBSType(t!)));
         const serializeMethods = generator.generateSerializeMethods(schema);
         const deserializeMethods = generator.generateDeserializeMethods(schema);
 
