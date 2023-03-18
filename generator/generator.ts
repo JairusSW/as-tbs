@@ -65,7 +65,7 @@ export class TBSGenerator {
                     this.offset
                 ));
                 this.offset += 2;
-                //this.offsetDyn.push(`(INPUT.${key}.length << 1)`);
+                this.offsetDyn.push(`(INPUT.${key}.length << 1)`);
             }
             methods.push(method);
         }
@@ -74,15 +74,17 @@ export class TBSGenerator {
     generateSerializeMethods(schema: TBSSchema) {
         let baseOffset = 0;
         let fluidOffset = 0;
+        let offsetDyn = "";
         let keyStmts: string[] = [];
         let methodStmts: string[] = [];
         for (const method of this.parseSchema(schema)) {
             baseOffset = 0;
             for (const stmt of method.serializeStmts) {
-                methodStmts.push(stmt.text.replaceAll("OFFSET", `changetype<usize>(out) + offset + <usize>${fluidOffset}${this.offsetDyn.length ? " + <usize>" : ""}${this.offsetDyn.join(" + <usize>").replaceAll("INPUT", "input")}`).replaceAll(" + <usize>0", ""));
+                methodStmts.push(stmt.text.replaceAll("OFFSET", `changetype<usize>(out) + offset + <usize>${fluidOffset}${offsetDyn}`).replaceAll(" + <usize>0", ""));
                 keyStmts.push(stmt.text.replaceAll("OFFSET", `changetype<usize>(out) + offset + <usize>${baseOffset}`).replaceAll(" + <usize>0", ""));
                 baseOffset += stmt.offset;
                 fluidOffset += stmt.offset;
+                offsetDyn += stmt.offsetDyn.map(v => v.replaceAll("INPUT", "input")).join(" + <usize>");
             }
         }
         let id = 0;
@@ -106,15 +108,17 @@ keyText:
     generateDeserializeMethods(schema: TBSSchema) {
         let baseOffset = 0;
         let fluidOffset = 0;
+        let offsetDyn = "";
         let keyStmts: string[] = [];
         let methodStmts: string[] = [];
         for (const method of this.parseSchema(schema)) {
             baseOffset = 0;
             for (const stmt of method.deserializeStmts) {
-                methodStmts.push(stmt.text.replaceAll("OFFSET", `changetype<usize>(input) + offset + <usize>${fluidOffset}`).replaceAll(" + <usize>0", ""));
+                methodStmts.push(stmt.text.replaceAll("OFFSET", `changetype<usize>(input) + offset + <usize>${fluidOffset}${offsetDyn}`).replaceAll(" + <usize>0", ""));
                 keyStmts.push(stmt.text.replaceAll("OFFSET", `changetype<usize>(out) + offset + <usize>${baseOffset}`).replaceAll(" + <usize>0", ""));
                 baseOffset += stmt.offset;
                 fluidOffset += stmt.offset;
+                offsetDyn += stmt.offsetDyn.map(v => v.replaceAll("INPUT", "out")).join(" + <usize>");
             }
         }
         let id = 0;
