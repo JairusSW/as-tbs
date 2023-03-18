@@ -8,6 +8,12 @@ class Vec3 {
     x!: i8;
     y!: i8;
     z!: i8;
+    @inline get __TBS_Size(): i32 {
+        return 3 + this.name.length;
+    }
+    @inline __TBS_Instantiate(): Vec3 {
+        return new Vec3();
+    }
 }
 
 const vec: Vec3 = {

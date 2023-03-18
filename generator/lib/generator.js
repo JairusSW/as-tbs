@@ -34,12 +34,11 @@ export class TBSGenerator {
                 method.deserializeStmts.push(new TBSStatement(`memory.copy(changetype<usize>(out.${key}), OFFSET + 2, load<u16>(OFFSET));`, this.offset));
             }
             else if (type.text == "string") {
-                method.serializeStmts.push(new TBSStatement(`
-                    store<u16>(OFFSET, input.${key}.length);
-                    memory.copy(OFFSET + 2, changetype<usize>(input.${key}), input.${key}.length << 1);`, this.offset));
+                method.serializeStmts.push(new TBSStatement(`store<u16>(OFFSET, input.${key}.length);
+        memory.copy(OFFSET + 2, changetype<usize>(input.${key}), input.${key}.length << 1);`, this.offset));
                 method.deserializeStmts.push(new TBSStatement(`out.${key} = String.UTF16.decodeUnsafe(OFFSET + 2, load<u16>(OFFSET) << 1);`, this.offset));
                 this.offset += 2;
-                this.offsetDyn.push(`(INPUT.${key}.length << 1)`);
+                //this.offsetDyn.push(`(INPUT.${key}.length << 1)`);
             }
             methods.push(method);
         }

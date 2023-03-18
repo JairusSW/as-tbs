@@ -1,7 +1,6 @@
 import {
     ClassDeclaration,
     FieldDeclaration,
-    Source,
     Parser,
     Statement
 } from "assemblyscript/dist/assemblyscript";
@@ -12,25 +11,12 @@ import { Transform } from "assemblyscript/dist/transform.js";
 import { TBSGenerator } from "../generator/generator.js";
 import { TBSSchema } from "../generator/schema.js";
 import { TBSType } from "../generator/type.js";
+import { isPrimitive } from "../generator/util.js";
 
-class SchemaData {
-    public keys: any[] = [];
-    public types: string[] = [];
-    public name: string = "";
-    public serializeStmts: string[] = [];
-    public deserializeStmts: string[] = [];
-    public instantiateStmts: string[] = [];
-    public offset: number = 0;
-}
-
-//let serializeText = "__TBS_Serialize<T>(input: T, out: ArrayBuffer): ArrayBuffer {\n";
 class TBSTransform extends BaseVisitor {
-    public schemasList: SchemaData[] = [];
-    public currentClass!: SchemaData;
-    public sources: Source[] = [];
+    public schema: TBSSchema = new TBSSchema();
+    public schemasList: TBSSchema[] = [];
 
-    // TODO: No globals, AAHHHH!
-    // Make per-file and have TBS call the correct ser/de function
     public serializeFunc: string = "";
     public deserializeFunc: string = "";
     public instantiateFunc: string = "";
@@ -42,8 +28,8 @@ class TBSTransform extends BaseVisitor {
     visitFieldDeclaration(node: FieldDeclaration): void {
         if (toString(node).startsWith("private")) return;
         if (!node.type) return;
-        this.currentClass.keys.push(toString(node.name));
-        this.currentClass.types.push(toString(node.type));
+        this.schema.keys.push(toString(node.name));
+        this.schema.types.push(new TBSType(toString(node.type)));
     }
     visitClassDeclaration(node: ClassDeclaration): void {
         let foundDecorator = false;
@@ -58,132 +44,61 @@ class TBSTransform extends BaseVisitor {
             return;
         }
 
-        const className = toString(node.name);
+        this.schema = new TBSSchema(node.name.text, [], []);
 
-        this.serializeFunc = `@inline __TBS_Serialize(input: ${className}, out: ArrayBuffer, offset: usize = 0): ArrayBuffer {\n`;
-        this.deserializeFunc = `@inline __TBS_Deserialize(input: ArrayBuffer, out: ${className}, offset: usize = 0): ${className} {\n`;
-        this.instantiateFunc = `@inline __TBS_Instantiate(): ${className} {\n`;
+        this.serializeFunc = `@inline __TBS_Serialize(input: ${node.name.text}, out: ArrayBuffer, offset: usize = 0): ArrayBuffer {\n`;
+        this.deserializeFunc = `@inline __TBS_Deserialize(input: ArrayBuffer, out: ${node.name.text}, offset: usize = 0): ${node.name.text} {\n`;
+        this.instantiateFunc = `@inline __TBS_Instantiate(): ${node.name.text} {\n`;
         this.sizeFunc = `@inline get __TBS_Size(): i32 {\n`;
 
-        console.log("Visiting Class: " + className);
-        this.currentClass = {
-            name: className,
-            keys: [],
-            types: [],
-            serializeStmts: [],
-            deserializeStmts: [],
-            instantiateStmts: [],
-            offset: 0
-        }
+        console.log("Visiting Class: " + node.name.text);
 
         this.visit(node.members);
 
-        const keyHashes = this.currentClass.keys.map((v: string) => [v, djb2Hash(v)]).sort((a, b) => <number>a[1] - <number>b[1]);
-        const sortedKeys: string[] = [];
-        const sortedTypes: string[] = [];
-        const sortedHashes: number[] = [];
-        for (const [key, hash] of keyHashes) {
-            sortedHashes.push(<number>hash);
-            sortedKeys.push(<string>key);
-            sortedTypes.push(this.currentClass.types.at(this.currentClass.keys.indexOf(key)));
-        }
+        const primitiveKeys: string[] = [];
+        const primitiveTypes: TBSType[] = [];
 
-        this.currentClass.keys = sortedKeys;
-        this.currentClass.types = sortedTypes;
+        let keys: string[] = [];
+        let types: TBSType[] = [];
 
-        const serializeStmts: string[] = [];
-        const deserializeStmts: string[] = [];
-        let offset = 0;
-        let offsetDyn = "";
-        for (let i = 0; i < sortedKeys.length; i++) {
-            const key = sortedKeys[i]!;
-            const baseType = sortedTypes[i]!;
-            const type = baseType;
-            console.log("type: " + type);
-            if (["i8", "u8", "i16", "u16", "i32", "u32", "f32", "i64", "I64", "u64", "U64", "f64"].includes(type)) {
-                serializeStmts.push(`store<${type}>(changetype<usize>(out) + offset + <usize>${offset + offsetDyn}, input.${key});`);
-                deserializeStmts.push(`out.${key} = load<${type}>(changetype<usize>(input) + offset + <usize>${offset + offsetDyn});`);
-                if (type.endsWith("8")) offset++;
-                else if (type.endsWith("16")) offset += 2;
-                else if (type.endsWith("32")) offset += 4;
-                else if (type.endsWith("64")) offset += 8;
-            } else if (["bool", "boolean"].includes(type)) {
-                serializeStmts.push(`store<${type}>(changetype<usize>(out) + offset + <usize>${offset + offsetDyn}, input.${key});`);
-                deserializeStmts.push(`out.${key} = load<${type}>(changetype<usize>(input) + offset + <usize>${offset + offsetDyn});`);
-                offset++;
-            } else if (type == "StaticArray") {
-                serializeStmts.push(`store<u16>(changetype<usize>(out) + offset + <usize>${offset + offsetDyn}, input.${key}.length);`);
-                serializeStmts.push(`memory.copy(changetype<usize>(out) + offset + <usize>${offset + 2}${offsetDyn}, changetype<usize>(input.${key}), input.${key}.length);`);
-               
-                deserializeStmts.push(`memory.copy(changetype<usize>(out.${key}), changetype<usize>(input) + offset + <usize>${offset + 2}${offsetDyn}, load<u16>(changetype<usize>(input) + offset + <usize>${offset + offsetDyn}));`);
-                offset += 2;
-                offsetDyn += ` + <usize>dynamic.${key}.length`;
-            } else if (type.startsWith("Array") && type != "ArrayBuffer") {
-                console.log(type);
-                serializeStmts.push(`store<u16>(changetype<usize>(out) + offset + <usize>${offset + offsetDyn}, input.${key}.length);`);
-                serializeStmts.push(`memory.copy(changetype<usize>(out) + offset + <usize>${offset + 2}${offsetDyn}, changetype<usize>(input.${key}.buffer), input.${key}.length);`);
-
-                deserializeStmts.push(`out.${key}.buffer = input.slice(offset + <usize>${offset + 2}${offsetDyn}, offset + <usize>${offset + 2}${offsetDyn} + load<u16>(changetype<usize>(input) + offset + <usize>${offset + offsetDyn}));`);
-                deserializeStmts.push(`store<usize>(changetype<usize>(out.${key}), changetype<usize>(out.${key}.buffer), offsetof<${type}>("dataStart"));`);
-                deserializeStmts.push(`out.${key}.byteLength = out.${key}.buffer.byteLength;`);
-                deserializeStmts.push(`out.${key}.length = out.${key}.buffer.byteLength;`);
-                // TODO ^ This ONLY works for single byte arrays!!!
-                offset += 2;
-                offsetDyn += ` + <usize>dynamic.${key}.length`;
-                this.currentClass.instantiateStmts.push(`this.${key} = [];`);
-            } else if (type == "string") {
-                serializeStmts.push(`store<u16>(changetype<usize>(out) + offset + <usize>${offset + offsetDyn}, input.${key}.length);`);
-                serializeStmts.push(`memory.copy(changetype<usize>(out) + offset + <usize>${offset + 2}${offsetDyn}, changetype<usize>(input.${key}), input.${key}.length << 1);`);
-                deserializeStmts.push(`out.${key} = String.UTF16.decodeUnsafe(changetype<usize>(input) + offset + <usize>${offset + 2}${offsetDyn}, load<u16>(changetype<usize>(input) + offset + <usize>${offset + offsetDyn}) << 1);`);
-                offset += 2;
-                offsetDyn += ` + <usize>(dynamic.${key}.length << 1)`;
-                this.currentClass.instantiateStmts.push(`this.${key} = "";`);
-            } else if (this.schemasList.filter(v => v.name == type).length) {
-                const ctx = this.schemasList.find(v => v.name == type);
-                //console.log("Found A Class!", ctx);
-                serializeStmts.push(`input.${key}.__TBS_Serialize(input.${key}, out, ${offset});`);
-                //deserializeStmts.push(`out.${key} = changetype<nonnull<${type}>>(__new(offsetof<nonnull<${type}>>(), idof<nonnull<${type}>>()));`);
-                deserializeStmts.push(`out.${key}.__TBS_Deserialize(input, out.${key}, ${offset});`);
-                offset += ctx!.offset;
-                this.currentClass.instantiateStmts.push(`this.${key} = new ${type}();`);
+        for (let i = 0; i < this.schema.keys.length; i++) {
+            const type = this.schema.types[i]!;
+            const key = this.schema.keys[i]!;
+            if (!isPrimitive(type)) {
+                primitiveTypes.push(type);
+                primitiveKeys.push(key);
+            } else {
+                types.push(type);
+                keys.push(key);
             }
         }
 
-        this.currentClass.serializeStmts = serializeStmts.map(v => v.replaceAll(" + <usize>0", "").replaceAll(" + <usize>dynamic.", " + <usize>input."));
-        this.currentClass.deserializeStmts = deserializeStmts.map(v => v.replaceAll(" + <usize>0", "").replaceAll(" + <usize>dynamic.", " + <usize>out."));
-        console.log(sortedKeys, sortedTypes, sortedHashes);
+        keys = [...primitiveKeys, ...keys];
+        types = [...primitiveTypes, ...types];
 
-        this.currentClass.offset = offset;
+        let sorted = [];
 
-        console.log(this.currentClass.serializeStmts);
-        console.log(this.currentClass.deserializeStmts);
-
-        for (const serStmt of this.currentClass.serializeStmts) {
-            this.serializeFunc += "\t\t" + serStmt + "\n"
+        for (let i = 0; i < this.schema.keys.length; i++) {
+            const type = this.schema.types[i]!;
+            const key = this.schema.keys[i]!;
+            const hash = djb2Hash(key);
+            sorted.push([key, type, hash]);
         }
 
-        this.serializeFunc += "\treturn out;\n}";
+        // @ts-ignore
+        sorted = sorted.sort((a, b) => a[2] - b[2]);
 
-        for (const derStmt of this.currentClass.deserializeStmts) {
-            this.deserializeFunc += "\t\t" + derStmt + "\n"
+        for (let i = 0; i < this.schema.keys.length; i++) {
+            keys[i] = <string>sorted[i]![0]!;
+            types[i] = <TBSType>sorted[i]![1]!;
         }
-        this.deserializeFunc += "\treturn out;\n}";
 
-        for (const instStmt of this.currentClass.instantiateStmts) {
-            this.instantiateFunc += "\t\t" + instStmt + "\n"
-        }
-        this.instantiateFunc += "\treturn this;\n}";
-
-        this.sizeFunc += "\treturn " + this.currentClass.offset;
-        if (offsetDyn.length) this.sizeFunc += offsetDyn.replaceAll("dynamic", "this").replaceAll("<usize>", "");
-        this.sizeFunc += ";\n}";
-
-        const instantiateMethod = SimpleParser.parseClassMember(this.instantiateFunc, node);
-        const sizeMethod = SimpleParser.parseClassMember(this.sizeFunc, node);
+        //const instantiateMethod = SimpleParser.parseClassMember(this.instantiateFunc, node);
+        //const sizeMethod = SimpleParser.parseClassMember(this.sizeFunc, node);
 
         const generator = new TBSGenerator();
 
-        const schema = new TBSSchema(this.currentClass.name, sortedKeys, sortedTypes.map(t => new TBSType(t!)));
+        const schema = new TBSSchema(this.schema.name, keys, types);
         const serializeMethods = generator.generateSerializeMethods(schema);
         const deserializeMethods = generator.generateDeserializeMethods(schema);
 
@@ -196,7 +111,7 @@ class TBSTransform extends BaseVisitor {
             console.log(deserializeMethods.methodText);
             node.members.push(SimpleParser.parseClassMember(deserializeMethods.methodText, node));
         }
-
+/*
         if (!node.members.find(v => v.name.text == "__TBS_Instantiate")) {
             node.members.push(instantiateMethod);
             console.log(this.instantiateFunc);
@@ -205,7 +120,7 @@ class TBSTransform extends BaseVisitor {
         if (!node.members.find(v => v.name.text == "__TBS_Size")) {
             node.members.push(sizeMethod);
             console.log(this.sizeFunc);
-        }
+        }*/
 
         console.log("Schema: ", schema);
         if (!node.members.find(v => v.name.text == "__TBS_Serialize_Key")) {
@@ -218,11 +133,7 @@ class TBSTransform extends BaseVisitor {
             node.members.push(SimpleParser.parseClassMember(deserializeMethods.keyText, node));
         }
 
-        this.schemasList.push(this.currentClass);
-    }
-    visitSource(node: Source): void {
-        this.globalStatements = [];
-        super.visitSource(node);
+        this.schemasList.push(this.schema);
     }
 }
 
